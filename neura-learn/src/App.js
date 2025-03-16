@@ -19,6 +19,7 @@ import Login from "./Components/Auth/Login";
 import Signup from "./Components/Auth/Signup";
 import ModulesAlphabets from "./Components/LearningModules/ModulesAlphabets";
 import SocialEmotions from "./Components/LearningModules/SocialEmotions";
+import VoiceRecognition from "./Components/LearningModules/VoiceRecognition";
 
 const HomePage = () => {
   return (
@@ -53,6 +54,7 @@ function App() {
           <Route path="/learning-modules" element = {<LearningModules/>}/>
           <Route path="/learning-modules/alphabets" element = {<ModulesAlphabets/>}/>
           <Route path="/learning-modules/social-emotions" element = {<SocialEmotions/>}/>
+          <Route path="/learning-modules/VoiceRecognition" element={<VoiceRecognition />} />
           
         </Route>
 

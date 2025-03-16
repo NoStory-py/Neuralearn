@@ -56,6 +56,15 @@ function LearningModules() {
                         </div>
                         </Link>
                     </div>
+                    <div className="col-md-6 col-lg-3">
+                        <Link to="/learning-modules/VoiceRecognition" className="learning-modules-link">
+                        <div className="subject-card">
+                            <i className="fas fa-microphone"></i>
+                            <h3>Speech Training</h3>
+                            <p>Enhance the conversational skills!</p>
+                        </div>
+                        </Link>
+                    </div>
                 </div>
 
 

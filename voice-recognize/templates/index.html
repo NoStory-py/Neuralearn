@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Model Tester</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 800px; margin: 20px auto; padding: 20px; }
+        .section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
+        button { padding: 10px 20px; margin: 5px; cursor: pointer; background-color: #4CAF50; color: white; border: none; }
+        .recording { background-color: #ff4444 !important; }
+        #results { margin-top: 20px; white-space: pre-wrap; }
+    </style>
+</head>
+<body>
+    <h1>Model Test Interface</h1>
+
+    <!-- Mode Selection -->
+    <div class="section">
+        <label><input type="radio" name="mode" value="speech_accuracy" checked> Speech Accuracy</label>
+        <label><input type="radio" name="mode" value="conversation"> Conversation</label>
+        <label><input type="radio" name="mode" value="practice"> Practice Mode</label>
+    </div>
+
+    <!-- Speech Accuracy Input -->
+    <div class="section" id="accuracyInput">
+        <h3>Speech Accuracy Test</h3>
+        <input type="text" id="targetPhrase" placeholder="Enter target phrase" style="width: 300px;">
+    </div>
+
+    <!-- Conversation Input -->
+    <div class="section" id="conversationInput" style="display: none;">
+        <h3>Conversation Test</h3>
+        <input type="text" id="question" placeholder="Enter question" style="width: 300px;">
+    </div>
+
+    <!-- Practice Mode Input -->
+    <div class="section" id="practiceInput" style="display: none;">
+        <h3>Practice Mode</h3>
+        <input type="text" id="practiceText" placeholder="Enter your practice phrase" style="width: 300px;">
+        <button onclick="submitPractice()">Submit Practice</button>
+    </div>
+
+    <!-- Recording Interface (hidden in Practice Mode) -->
+    <div class="section" id="recordSection">
+        <button id="recordButton" onclick="toggleRecording()">
+            Start Recording
+        </button>
+        <div id="timer" style="display: none;">Recording Time: <span id="countdown">0</span>s</div>
+    </div>
+
+    <!-- Results Display -->
+    <div class="section">
+        <h3>Results</h3>
+        <div id="results"></div>
+    </div>
+
+    <script>
+        let mediaRecorder;
+        let audioChunks = [];
+        let timerInterval;
+        let isRecording = false;
+        let elapsedSeconds = 0;
+
+        // Handle mode switching
+        document.querySelectorAll('input[name="mode"]').forEach(radio => {
+            radio.addEventListener('change', () => {
+                const mode = radio.value;
+                document.getElementById('accuracyInput').style.display = (mode === 'speech_accuracy') ? 'block' : 'none';
+                document.getElementById('conversationInput').style.display = (mode === 'conversation') ? 'block' : 'none';
+                document.getElementById('practiceInput').style.display = (mode === 'practice') ? 'block' : 'none';
+                // Show recording interface only for audio modes
+                document.getElementById('recordSection').style.display = (mode === 'practice') ? 'none' : 'block';
+            });
+        });
+
+        async function toggleRecording() {
+            if (!isRecording) {
+                try {
+                    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                    mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm; codecs=opus' });
+                    
+                    document.getElementById('recordButton').classList.add('recording');
+                    document.getElementById('recordButton').textContent = 'Stop Recording';
+                    document.getElementById('timer').style.display = 'block';
+                    startTimer();
+
+                    mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
+                    mediaRecorder.start();
+                    isRecording = true;
+                } catch (err) {
+                    showError("Microphone access denied!");
+                }
+            } else {
+                mediaRecorder.stop();
+                stopTimer();
+                document.getElementById('recordButton').classList.remove('recording');
+                document.getElementById('recordButton').textContent = 'Start Recording';
+                document.getElementById('timer').style.display = 'none';
+                
+                mediaRecorder.onstop = processRecording;
+                isRecording = false;
+            }
+        }
+
+        function startTimer() {
+            elapsedSeconds = 0;
+            document.getElementById('countdown').textContent = '0';
+            timerInterval = setInterval(() => {
+                elapsedSeconds++;
+                document.getElementById('countdown').textContent = elapsedSeconds;
+            }, 1000);
+        }
+
+        function stopTimer() {
+            clearInterval(timerInterval);
+            elapsedSeconds = 0;
+        }
+
+        async function processRecording() {
+            const audioBlob = new Blob(audioChunks, { type: mediaRecorder.mimeType });
+            audioChunks = [];
+            
+            const formData = new FormData();
+            formData.append('audio', audioBlob, 'recording.webm');
+            
+            const mode = document.querySelector('input[name="mode"]:checked').value;
+            formData.append('mode', mode);
+
+            if (mode === 'speech_accuracy') {
+                formData.append('target', document.getElementById('targetPhrase').value);
+            } else if (mode === 'conversation') {
+                formData.append('question', document.getElementById('question').value);
+            }
+
+            try {
+                const response = await fetch('/analyze', { method: 'POST', body: formData });
+                const results = await response.json();
+                
+                if (results.error) {
+                    showError(results.error);
+                } else {
+                    displayResults(results);
+                }
+            } catch (error) {
+                showError("Analysis failed: " + error.message);
+            }
+        }
+
+        // Function for practice mode submission
+        async function submitPractice() {
+            const practiceText = document.getElementById('practiceText').value;
+            const formData = new FormData();
+            formData.append('mode', 'practice');
+            formData.append('practice_text', practiceText);
+
+            try {
+                const response = await fetch('/analyze', { method: 'POST', body: formData });
+                const results = await response.json();
+                
+                if (results.error) {
+                    showError(results.error);
+                } else {
+                    displayResults(results);
+                }
+            } catch (error) {
+                showError("Practice analysis failed: " + error.message);
+            }
+        }
+
+        function displayResults(data) {
+            let output = "";
+            if (data.accuracy !== undefined) {
+                output += `Accuracy: ${data.accuracy}%\n`;
+                output += `Emotion: ${data.emotion} (${(data.confidence * 100).toFixed(1)}%)\n`;
+            }
+            if (data.relevance) {
+                output += `Relevance: ${data.relevance} (${(data.confidence * 100).toFixed(1)}%)\n`;
+                output += `Response Time: ${data.response_time}s\n`;
+            }
+            if (data.audio_features) {
+                output += `Duration: ${data.audio_features.duration.toFixed(2)}s\n`;
+                output += `Pitch Mean: ${data.audio_features.pitch_mean.toFixed(2)}\n`;
+                output += `Pitch Variation: ${data.audio_features.pitch_std.toFixed(2)}\n`;
+            }
+            if (data.suggestions && data.suggestions.length > 0) {
+                output += "\nSuggestions:\n";
+                data.suggestions.forEach(suggestion => {
+                    output += `- ${suggestion}\n`;
+                });
+            }
+            document.getElementById('results').textContent = output;
+        }
+
+        function showError(message) {
+            document.getElementById('results').textContent = "Error: " + message;
+        }
+    </script>
+</body>
+</html>
