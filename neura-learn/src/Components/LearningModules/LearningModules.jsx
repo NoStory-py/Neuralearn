@@ -14,66 +14,57 @@ function LearningModules() {
                 />
 
                 <div className="row subject-selection">
-                    <div className="col-md-6 col-lg-3">
-                        <div className="subject-card">
-                            <i className="fas fa-calculator"></i>
-                            <h3>Math</h3>
-                            <p>Learn numbers and counting!</p>
-                        </div>
-                    </div>
-                    <div className="col-md-6 col-lg-3">
-                        <Link to="/learning-modules/alphabets" className="learning-modules-link">
-                            <div className="subject-card">
-                                <i className="fas fa-font"></i>
-                                <h3>Alphabet</h3>
-                                <p>Explore letters and words!</p>
-                            </div>
-                        </Link>
-                    </div>
-                    <div className="col-md-6 col-lg-3">
-                        <Link to="/learning-modules/colors" className="learning-modules-link">
-                            <div className="subject-card">
-                                <i className="fas fa-paint-brush"></i>
-                                <h3>Colors</h3>
-                                <p>Learn about colors!</p>
-                            </div>
-                        </Link>
-                    </div>
-                    <div className="col-md-6 col-lg-3">
-                        <Link to="/learning-modules/shapes" className="learning-modules-link">
-                            <div className="subject-card">
-                                <i className="fas fa-square"></i>
-                                <h3>Shapes</h3>
-                                <p>Discover shapes!</p>
-                            </div>
-                        </Link>
-                    </div>
-                    <div className="col-md-6 col-lg-3">
-                        <Link to="/learning-modules/social-emotions" className="learning-modules-link">
-                            <div className="subject-card-multiple">
-                                <i className="fas fa-smile"></i>
-                                <i className="fas fa-frown"></i>
-                                <i className="fas fa-surprise"></i>
-                                <i className="fas fa-angry"></i>
-                                <h3>Social Emotions</h3>
-                                <p>Learn about Social cues and Emotions!</p>
-                            </div>
-                        </Link>
-                    </div>
-                    <div className="col-md-6 col-lg-3">
-                        <Link to="/learning-modules/VoiceRecognition" className="learning-modules-link">
-                        <div className="subject-card">
-                            <i className="fas fa-microphone"></i>
-                            <h3>Speech Training</h3>
-                            <p>Enhance the conversational skills!</p>
-                        </div>
-                        </Link>
-                    </div>
+                    <LearningModulesCard
+                        to="maths"
+                        divname="subject-card"
+                        icons={["fa-calculator"]}
+                        title="Maths"
+                        desc="Learn numbers and counting!"
+                    />
+
+                    <LearningModulesCard
+                        to="alphabets"
+                        divname="subject-card"
+                        icons={["fa-font"]}
+                        title="Alphabet"
+                        desc="Explore letters and words!"
+                    />
+                    
+                    <LearningModulesCard
+                        to="colors"
+                        divname="subject-card"
+                        icons={["fa-paint-brush"]}
+                        title="Colors"
+                        desc="Learn about colors!"
+                    />
+
+                    <LearningModulesCard
+                        to="shapes"
+                        divname="subject-card"
+                        icons={["fa-square"]}
+                        title="Shapes"
+                        desc="Discover shapes!"
+                    />
+                    
+                    <LearningModulesCard
+                        to="social-emotions"
+                        divname="subject-card-multiple"
+                        icons={["fa-smile", "fa-frown", "fa-surprise", "fa-angry"]}
+                        title="Social Emotions"
+                        desc="Learn about Social cues and Emotions!"
+                    />
+                    
+                    <LearningModulesCard
+                        to="VoiceRecognition"
+                        divname="subject-card"
+                        icons={["fa-microphone"]}
+                        title="Speech Training"
+                        desc="Enhance the conversational skills!"
+                    />
+
                 </div>
 
-
                 <div id="feedback" className="feedback-message"></div>
-
 
                 <div className="progress">
                     <div id="progressBar" className="progress-bar" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">0%</div>
@@ -86,23 +77,19 @@ function LearningModules() {
 
 export default LearningModules;
 
-/*
-<script>
-    function selectSubject(subject) {
-        const totalSubjects = 4;
-        let completedSubjects = 1;
+function LearningModulesCard(props) {
 
-        const progressPercentage = (completedSubjects / totalSubjects) * 100;
-        const progressBar = document.getElementById('progressBar');
-        progressBar.style.width = `${progressPercentage}%`;
-        progressBar.setAttribute('aria-valuenow', progressPercentage);
-        progressBar.innerText = `${Math.round(progressPercentage)}%`;
-
-        const feedback = document.getElementById('feedback');
-        feedback.innerText = `Great! You chose ${subject.charAt(0).toUpperCase() + subject.slice(1)}!`;
-
-        setTimeout(() => {
-            window.location.href = `${subject}.html`;
-        }, 1000);
-    }
-</script>*/
+    return (
+        <div className="col-md-6 col-lg-3">
+            <Link to={"/learning-modules/" + props.to} className="learning-modules-link">
+                <div className={props.divname}>
+                    {props.icons.map((icon, idx) => (
+                        <i key={idx} className={"fas " + icon}></i>
+                    ))}
+                    <h3>{props.title}</h3>
+                    <p>{props.desc}</p>
+                </div>
+            </Link>
+        </div>
+    )
+}

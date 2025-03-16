@@ -1,20 +1,50 @@
 import React, { useRef, useState, useCallback } from "react";
 import Webcam from "react-webcam";
+import axios from "axios";
 import "./SocialEmotions.css";
 
 const CameraAccess = () => {
   const webcamRef = useRef(null);
+  const [emotion, setEmotion] = useState(null);
   const [error, setError] = useState(null);
 
   const videoConstraints = {
-    facingMode: "user",
+    facingMode: "facingMode",
     width: { ideal: 720 },
     height: { ideal: 1280 },
   };
 
-  const capture = useCallback(() => {
+  const capture = useCallback(async () => {
     const imageSrc = webcamRef.current?.getScreenshot();
-    console.log(imageSrc);
+    if (!imageSrc) return;
+
+    try {
+      // Convert base64 to binary
+      const byteString = atob(imageSrc.split(",")[1]);
+      const mimeString = imageSrc.split(",")[0].split(":")[1].split(";")[0];
+
+      const ab = new ArrayBuffer(byteString.length);
+      const ia = new Uint8Array(ab);
+      for (let i = 0; i < byteString.length; i++) {
+        ia[i] = byteString.charCodeAt(i);
+      }
+      const blob = new Blob([ab], { type: mimeString });
+
+      const formData = new FormData();
+      formData.append("image", blob, "capture.jpg");
+
+      const response = await axios.post("http://localhost:5000/api/predict-emotion", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
+
+      setEmotion(response.data.emotion); // Update with backend response
+
+    } catch (err) {
+      console.error("Error sending image to backend:", err);
+      setError("Error analyzing emotion.");
+    }
   }, []);
 
   return (
@@ -38,6 +68,13 @@ const CameraAccess = () => {
           <button id="btn-capture-socialemotion" className="btn-capture" onClick={capture}>
             📸 Capture
           </button>
+
+          {emotion && (
+            <div className="display-emotion">
+              😊 Detected Emotion: <strong>{emotion}</strong>
+            </div>
+          )}
+
         </>
       )}
     </div>
@@ -61,7 +98,7 @@ const SocialEmotions = () => {
         </div>
       ) : cameraOn ? (
         <>
-          <button id="btn-control-socialemotion"className="btn btn-control" onClick={() => setCameraOn(false)}>
+          <button id="btn-control-socialemotion" className="btn btn-control" onClick={() => setCameraOn(false)}>
             🚫 Stop Camera
           </button>
           <CameraAccess />

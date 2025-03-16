@@ -1,6 +1,8 @@
 const express = require('express');
 const mongoose = require('mongoose');
+const cors = require('cors');
 const authRoutes = require('./routes/auth');
+const predictRoutes = require('./routes/predict');
 
 const app = express();
 
@@ -12,8 +14,15 @@ mongoose.connect('mongodb://localhost:27017/simple-auth')
 // Middleware
 app.use(express.json());
 
+app.use(cors({
+  origin: 'http://localhost:3000',
+  methods: ['POST'],
+  credentials: true
+}));
+
 // Routes
 app.use('/api', authRoutes);
+app.use('/api', predictRoutes);
 
 // Start server
 const PORT = 5000;

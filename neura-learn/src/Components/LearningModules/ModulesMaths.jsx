@@ -3,7 +3,7 @@ import './ModulesMaths.css'
 function ModulesMaths() {
     return (
         <>
-
+            
         </>
     )
 }
