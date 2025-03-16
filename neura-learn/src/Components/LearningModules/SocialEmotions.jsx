@@ -1,110 +1,16 @@
-import React, { useRef, useCallback, useState, useEffect } from "react";
+import React, { useRef, useState, useCallback } from "react";
 import Webcam from "react-webcam";
 import "./SocialEmotions.css";
 
-const CameraAccess = ({ onError }) => {
+const CameraAccess = () => {
   const webcamRef = useRef(null);
-  const [deviceId, setDeviceId] = useState("");
-  const [devices, setDevices] = useState([]);
   const [error, setError] = useState(null);
 
-  // Device enumeration and event listener setup
-  useEffect(() => {
-    const getDevices = async () => {
-      try {
-        const mediaDevices = await navigator.mediaDevices.enumerateDevices();
-        const videoDevices = mediaDevices.filter(
-          ({ kind }) => kind === "videoinput"
-        );
-        setDevices(videoDevices);
-
-        // Try to select the mobile front camera if available
-        const mobileFrontCamera = videoDevices.find((device) =>
-          device.label.toLowerCase().includes("front")
-        );
-        if (mobileFrontCamera) {
-          setDeviceId(mobileFrontCamera.deviceId);
-        }
-      } catch (err) {
-        console.error("Error enumerating devices:", err);
-      }
-    };
-
-    const handleDeviceChange = () => {
-      getDevices();
-    };
-
-    if (navigator.mediaDevices && navigator.mediaDevices.enumerateDevices) {
-      getDevices();
-      if (navigator.mediaDevices.addEventListener) {
-        navigator.mediaDevices.addEventListener(
-          "devicechange",
-          handleDeviceChange
-        );
-      }
-    } else {
-      setError("Camera API not supported");
-    }
-
-    return () => {
-      if (
-        navigator.mediaDevices &&
-        navigator.mediaDevices.removeEventListener
-      ) {
-        navigator.mediaDevices.removeEventListener(
-          "devicechange",
-          handleDeviceChange
-        );
-      }
-    };
-  }, []);
-
-  // Mobile-specific video constraints
-  const mobileVideoConstraints = {
-    deviceId: deviceId ? { exact: deviceId } : undefined,
-    facingMode: { exact: "user" },
-    width: { min: 480, ideal: 720 },
-    height: { min: 640, ideal: 1280 },
-    frameRate: { ideal: 60, min: 30 },
+  const videoConstraints = {
+    facingMode: "user",
+    width: { ideal: 720 },
+    height: { ideal: 1280 },
   };
-
-  // Camera initialization using useCallback to avoid ESLint dependency warnings
-  const startCamera = useCallback(async () => {
-    try {
-      if (!navigator.mediaDevices?.getUserMedia) {
-        throw new Error("Camera API not supported");
-      }
-
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: /Mobile/.test(navigator.userAgent)
-          ? mobileVideoConstraints
-          : { facingMode: "user" },
-      });
-
-      if (webcamRef.current) {
-        const video = webcamRef.current.video;
-        video.srcObject = stream;
-        await new Promise((resolve) => {
-          video.onloadedmetadata = resolve;
-        });
-      }
-    } catch (err) {
-      setError(
-        `Camera Error: ${
-          err.name === "NotAllowedError"
-            ? "Please enable camera permissions in browser settings"
-            : err.message
-        }`
-      );
-      onError();
-    }
-  }, [deviceId, mobileVideoConstraints, onError]);
-
-  useEffect(() => {
-    if (devices.length > 0) {
-      startCamera();
-    }
-  }, [devices, deviceId, startCamera]);
 
   const capture = useCallback(() => {
     const imageSrc = webcamRef.current?.getScreenshot();
@@ -116,12 +22,6 @@ const CameraAccess = ({ onError }) => {
       {error ? (
         <div className="error-container">
           <p className="error-message">{error}</p>
-          <button
-            className="btn-retry"
-            onClick={() => window.location.reload()}
-          >
-            Reload and Try Again
-          </button>
         </div>
       ) : (
         <>
@@ -129,10 +29,13 @@ const CameraAccess = ({ onError }) => {
             ref={webcamRef}
             audio={false}
             screenshotFormat="image/jpeg"
-            videoConstraints={mobileVideoConstraints}
-            className="webcam-video" // Add this class
+            videoConstraints={videoConstraints}
+            className="webcam-video"
+            onUserMediaError={() =>
+              setError("Camera access denied. Please enable permissions.")
+            }
           />
-          <button className="btn-capture" onClick={capture}>
+          <button id="btn-capture-socialemotion" className="btn-capture" onClick={capture}>
             📸 Capture
           </button>
         </>
@@ -143,18 +46,7 @@ const CameraAccess = ({ onError }) => {
 
 const SocialEmotions = () => {
   const [cameraOn, setCameraOn] = useState(false);
-  const [hasCameraSupport, setHasCameraSupport] = useState(true);
-
-  // Check if the browser supports the camera API
-  useEffect(() => {
-    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-      setHasCameraSupport(false);
-    }
-  }, []);
-
-  const handleCameraError = () => {
-    setCameraOn(false);
-  };
+  const hasCameraSupport = !!navigator.mediaDevices?.getUserMedia;
 
   return (
     <div className="social-emotions-container">
@@ -165,25 +57,17 @@ const SocialEmotions = () => {
 
       {!hasCameraSupport ? (
         <div className="error-message">
-          ⚠️ Camera access is not supported in your browser. Please try using a
-          modern mobile device or computer.
+          ⚠️ Camera access is not supported in your browser.
         </div>
       ) : cameraOn ? (
         <>
-          <button
-            className="btn btn-control"
-            onClick={() => setCameraOn(false)}
-          >
+          <button id="btn-control-socialemotion"className="btn btn-control" onClick={() => setCameraOn(false)}>
             🚫 Stop Camera
           </button>
-          <CameraAccess onError={handleCameraError} />
+          <CameraAccess />
         </>
       ) : (
-        <button
-          className="btn btn-start"
-          onClick={() => setCameraOn(true)}
-          aria-label="Start emotion recognition session"
-        >
+        <button id="btn-start-socialemotion" className="btn btn-start" onClick={() => setCameraOn(true)}>
           🎬 Start Recognition
         </button>
       )}

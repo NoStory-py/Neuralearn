@@ -1,5 +1,6 @@
-import {Link} from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import './LearningModules.css';
+import VideoSection from './VideoSection';
 
 function LearningModules() {
     return (
@@ -7,15 +8,14 @@ function LearningModules() {
             <div className="container">
                 <h1 className="text-center mt-4">Select a Subject</h1>
 
-                <div id="video-section-modules"className="video-section">
-                    <p><strong>Before starting, please watch this video:</strong></p>
-                    <a href="https://youtu.be/hU8xEH5yRnA?si=Qs1zRmXyzpDojYdG" target="_blank">Watch Introductory Video</a>
-                </div>
-
+                <VideoSection
+                    title="Before starting, please watch this video:"
+                    src="https://www.youtube.com/embed/hU8xEH5yRnA"
+                />
 
                 <div className="row subject-selection">
                     <div className="col-md-6 col-lg-3">
-                        <div className="subject-card" onclick="selectSubject('math')">
+                        <div className="subject-card">
                             <i className="fas fa-calculator"></i>
                             <h3>Math</h3>
                             <p>Learn numbers and counting!</p>
@@ -23,37 +23,41 @@ function LearningModules() {
                     </div>
                     <div className="col-md-6 col-lg-3">
                         <Link to="/learning-modules/alphabets" className="learning-modules-link">
-                        <div className="subject-card">
-                            <i className="fas fa-font"></i>
-                            <h3>Alphabet</h3>
-                            <p>Explore letters and words!</p>
-                        </div>
+                            <div className="subject-card">
+                                <i className="fas fa-font"></i>
+                                <h3>Alphabet</h3>
+                                <p>Explore letters and words!</p>
+                            </div>
                         </Link>
                     </div>
                     <div className="col-md-6 col-lg-3">
-                        <div className="subject-card" onclick="selectSubject('color')">
-                            <i className="fas fa-paint-brush"></i>
-                            <h3>Colors</h3>
-                            <p>Learn about colors!</p>
-                        </div>
+                        <Link to="/learning-modules/colors" className="learning-modules-link">
+                            <div className="subject-card">
+                                <i className="fas fa-paint-brush"></i>
+                                <h3>Colors</h3>
+                                <p>Learn about colors!</p>
+                            </div>
+                        </Link>
                     </div>
                     <div className="col-md-6 col-lg-3">
-                        <div className="subject-card" onclick="selectSubject('shapes')">
-                            <i className="fas fa-square"></i>
-                            <h3>Shapes</h3>
-                            <p>Discover shapes!</p>
-                        </div>
+                        <Link to="/learning-modules/shapes" className="learning-modules-link">
+                            <div className="subject-card">
+                                <i className="fas fa-square"></i>
+                                <h3>Shapes</h3>
+                                <p>Discover shapes!</p>
+                            </div>
+                        </Link>
                     </div>
                     <div className="col-md-6 col-lg-3">
-                    <Link to="/learning-modules/social-emotions" className="learning-modules-link">
-                        <div className="subject-card">
-                            <i className="fas fa-smile" style={{ marginRight:"0.5rem", marginRight: "0.5rem" }}></i>
-                            <i className="fas fa-frown" style={{ marginRight:"0.5rem", marginRight: "0.5rem" }}></i>
-                            <i className="fas fa-surprise" style={{ marginRight:"0.5rem", marginRight: "0.5rem" }}></i>
-                            <i className="fas fa-angry" style={{ marginRight:"0.5rem", marginRight: "0.5rem" }}></i>
-                            <h3>Social Emotions</h3>
-                            <p>Learn about Social cues and Emotions!</p>
-                        </div>
+                        <Link to="/learning-modules/social-emotions" className="learning-modules-link">
+                            <div className="subject-card-multiple">
+                                <i className="fas fa-smile"></i>
+                                <i className="fas fa-frown"></i>
+                                <i className="fas fa-surprise"></i>
+                                <i className="fas fa-angry"></i>
+                                <h3>Social Emotions</h3>
+                                <p>Learn about Social cues and Emotions!</p>
+                            </div>
                         </Link>
                     </div>
                     <div className="col-md-6 col-lg-3">
@@ -80,7 +84,9 @@ function LearningModules() {
     )
 }
 
-{/*
+export default LearningModules;
+
+/*
 <script>
     function selectSubject(subject) {
         const totalSubjects = 4;
@@ -99,5 +105,4 @@ function LearningModules() {
             window.location.href = `${subject}.html`;
         }, 1000);
     }
-</script>*/}
-export default LearningModules;
+</script>*/

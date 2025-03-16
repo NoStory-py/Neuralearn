@@ -25,15 +25,7 @@ function HomeCard() {
   return (
     <div className="container my-4">
       <div className="row mb-2">
-        <CardItem
-          title="🎮 Learn while playing!"
-          subtitle="Interactive Games"
-          description="Fun and sensory-friendly games that help develop critical skills."
-          link="/games"
-          linkname="Learn more 🎨"
-          image="/Images/interactive-games.jpg"
-          imagealt="Interactive Games"
-        />
+
         <CardItem
           title="🎥 Learn from our expert tutors!"
           subtitle="Educational Videos"
@@ -43,7 +35,18 @@ function HomeCard() {
           image="/Images/educational-videos.jpg"
           imagealt="Educational Videos"
         />
+
+        <CardItem
+          title="🎮 Learn while playing!"
+          subtitle="Interactive Games"
+          description="Fun and sensory-friendly games that help develop critical skills."
+          link="/games"
+          linkname="Learn more 🎨"
+          image="/Images/interactive-games.jpg"
+          imagealt="Interactive Games"
+        />
       </div>
+
       <div className="row justify-content-center">
         <CardItem
           title="🎨 Fun activities!"

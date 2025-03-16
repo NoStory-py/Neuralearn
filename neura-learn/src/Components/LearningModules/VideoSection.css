@@ -1,0 +1,14 @@
+.video-section{
+    margin: 2rem 0;
+    padding: 1rem;
+    background-color: rgb(114, 238, 114);
+    border-radius: 40px;
+
+}
+
+.video-section iframe {
+
+    max-width: 600px;
+    height: 315px;
+
+}

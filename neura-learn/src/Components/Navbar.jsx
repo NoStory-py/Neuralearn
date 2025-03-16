@@ -46,14 +46,15 @@ function Navbar() {
                 🎨 Activities
               </Link>
               <ul className="dropdown-menu kids-dropdown">
+                
+                <li>
+                  <Link className="dropdown-item kids-dropdown-item" to="/learning-modules">
+                    📚 Learning Modules
+                  </Link>
+                </li> 
                 <li>
                   <Link className="dropdown-item kids-dropdown-item" to="/games">
                     🎓 Learning Games
-                  </Link>
-                </li>
-                <li>
-                  <Link className="dropdown-item kids-dropdown-item" to="/learning-modules">
-                    📚 Story Time
                   </Link>
                 </li>
                 <li><hr className="dropdown-divider" /></li>

@@ -61,8 +61,8 @@
     100% { transform: translate(-50%, -50%) rotate(360deg); }
   }
   
-  /* Buttons */
-  .btn {
+
+  #btn-start-socialemotion, #btn-control-socialemotion {
     padding: 1rem 2rem;
     font-size: 1.1rem;
     border: none;
@@ -75,27 +75,27 @@
     gap: 0.5rem;
   }
   
-  .btn-start {
+  #btn-start-socialemotion {
     background: #48bb78;
     color: white;
   }
   
-  .btn-start:hover {
+  #btn-start-socialemotion:hover {
     background: #38a169;
     transform: scale(1.05);
   }
   
-  .btn-control {
+  #btn-control-socialemotion {
     background: #e53e3e;
     color: white;
   }
   
-  .btn-control:hover {
+  #btn-control-socialemotion:hover {
     background: #c53030;
     transform: scale(1.05);
   }
   
-  .btn-capture {
+  #btn-capture-socialemotion {
     position: absolute;
     bottom: 2rem;
     left: 50%;
@@ -106,15 +106,9 @@
     box-shadow: 0 4px 8px rgba(0,0,0,0.2);
   }
   
-  .btn-capture:hover {
+  #btn-capture-socialemotion:hover {
     background: rgba(255, 255, 255, 1);
     transform: translateX(-50%) scale(1.05);
-  }
-  
-  .btn-retry {
-    background: #4299e1;
-    color: white;
-    padding: 0.8rem 1.5rem;
   }
   
   /* Error Handling */
@@ -157,7 +151,7 @@
       font-size: 1rem;
     }
   
-    .btn {
+    #btn-start-socialemotion, #btn-control-socialemotion {
       padding: 0.8rem 1.5rem;
       font-size: 1rem;
     }

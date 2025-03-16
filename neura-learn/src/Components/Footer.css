@@ -60,18 +60,6 @@
     transform: scale(1.2) rotate(15deg);
 }
 
-.back-to-top {
-    color: #2d3436 !important;
-    text-decoration: none;
-    font-weight: bold;
-    transition: all 0.3s ease;
-}
-
-.back-to-top:hover {
-    color: #ff6b6b !important;
-    text-shadow: 0 0 10px #fff;
-}
-
 .copyright {
     color: #2d3436;
     margin-top: 1rem;

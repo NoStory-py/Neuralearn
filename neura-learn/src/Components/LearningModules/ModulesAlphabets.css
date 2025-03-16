@@ -79,18 +79,3 @@
     background-color: #004d40;
 }
 
-.video-section-alphabets {
-    margin-top: 40px;
-    padding: 1rem;
-    background-color: rgb(114, 238, 114);
-    border-radius: 40px;
-
-}
-
-.video-section-alphabets iframe {
-    width: 100%;
-    /* Responsive video */
-    max-width: 600px;
-    height: 315px;
-    /* Fixed height for video */
-}

@@ -33,7 +33,7 @@
     margin-top: 40px;
 }
 
-.subject-card {
+.subject-card, .subject-card-multiple {
     margin: 20px;
     padding: 30px;
     text-align: center;
@@ -45,17 +45,23 @@
     font-size: 1.2rem;
 }
 
-.subject-card:hover {
+.subject-card:hover, .subject-card-multiple:hover {
     background-color: #ffd966;
     transform: translateY(-10px) scale(1.08);
     cursor: pointer;
 }
 
-.subject-card i {
+.subject-card i,
+.subject-card-multiple i {
     color: #ff6f91;
     font-size: 2.5rem;
-    margin-bottom: 15px;
+    margin-bottom: 1.5rem;
     animation: iconBounce 2s infinite;
+}
+
+.subject-card-multiple i {
+    margin-right: 0.3rem;
+    margin-left: 0.3rem;
 }
 
 @keyframes iconBounce {
@@ -82,7 +88,7 @@
     transition: width 0.6s ease;
     background-color: #ff6f91;
     width: 0%;
-    
+
 }
 
 .feedback-message {
@@ -93,7 +99,7 @@
     text-shadow: 1px 1px 2px #ffdfba;
 }
 
-#video-section-modules {
+.video-section {
     margin-top: 30px;
     text-align: center;
     background-color: #ffdfba;
@@ -104,17 +110,7 @@
     color: #d9534f;
 }
 
-.video-section-modules a {
-    font-weight: bold;
-    color: #ff6f91;
-}
-
-.video-section-modules a:hover {
-    color: #e34d67;
-    text-decoration: underline;
-}
-
 .learning-modules-link {
-    color:#333;
+    color: #333;
     text-decoration: none;
 }
