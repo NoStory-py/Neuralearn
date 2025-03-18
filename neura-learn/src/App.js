@@ -1,8 +1,5 @@
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import ProtectedRoute from "./Components/ProtectedRoute";
-
-// import './Assets/CSS/main.css';
-
 import Navbar from "./Components/Navbar";
 import Footer from "./Components/Footer";
 import HomeCarousel from "./Components/Home/HomeCarousel";
@@ -18,7 +15,10 @@ import LearningModules from './Components/LearningModules/LearningModules';
 import Login from "./Components/Auth/Login";
 import Signup from "./Components/Auth/Signup";
 import ModulesAlphabets from "./Components/LearningModules/ModulesAlphabets";
+import ModulesColors from "./Components/LearningModules/ModulesColors";
+import ModulesShapes from "./Components/LearningModules/ModulesShapes";
 import SocialEmotions from "./Components/LearningModules/SocialEmotions";
+import VoiceRecognition from "./Components/LearningModules/VoiceRecognition";
 
 const HomePage = () => {
   return (
@@ -29,7 +29,6 @@ const HomePage = () => {
     </>
   );
 };
-
 
 function App() {
   return (
@@ -52,7 +51,10 @@ function App() {
           <Route path="/printables" element={<PrintableActivities />} />
           <Route path="/learning-modules" element = {<LearningModules/>}/>
           <Route path="/learning-modules/alphabets" element = {<ModulesAlphabets/>}/>
+          <Route path="/learning-modules/colors" element = {<ModulesColors/>}/>
+          <Route path="/learning-modules/shapes" element = {<ModulesShapes/>}/>
           <Route path="/learning-modules/social-emotions" element = {<SocialEmotions/>}/>
+          <Route path="/learning-modules/VoiceRecognition" element={<VoiceRecognition />} />
           
         </Route>
 

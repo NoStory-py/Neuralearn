@@ -1,5 +1,6 @@
-import {Link} from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import './LearningModules.css';
+import VideoSection from './VideoSection';
 
 function LearningModules() {
     return (
@@ -7,60 +8,63 @@ function LearningModules() {
             <div className="container">
                 <h1 className="text-center mt-4">Select a Subject</h1>
 
-                <div id="video-section-modules"className="video-section">
-                    <p><strong>Before starting, please watch this video:</strong></p>
-                    <a href="https://youtu.be/hU8xEH5yRnA?si=Qs1zRmXyzpDojYdG" target="_blank">Watch Introductory Video</a>
-                </div>
-
+                <VideoSection
+                    title="Before starting, please watch this video:"
+                    src="https://www.youtube.com/embed/hU8xEH5yRnA"
+                />
 
                 <div className="row subject-selection">
-                    <div className="col-md-6 col-lg-3">
-                        <div className="subject-card" onclick="selectSubject('math')">
-                            <i className="fas fa-calculator"></i>
-                            <h3>Math</h3>
-                            <p>Learn numbers and counting!</p>
-                        </div>
-                    </div>
-                    <div className="col-md-6 col-lg-3">
-                        <Link to="/learning-modules/alphabets" className="learning-modules-link">
-                        <div className="subject-card">
-                            <i className="fas fa-font"></i>
-                            <h3>Alphabet</h3>
-                            <p>Explore letters and words!</p>
-                        </div>
-                        </Link>
-                    </div>
-                    <div className="col-md-6 col-lg-3">
-                        <div className="subject-card" onclick="selectSubject('color')">
-                            <i className="fas fa-paint-brush"></i>
-                            <h3>Colors</h3>
-                            <p>Learn about colors!</p>
-                        </div>
-                    </div>
-                    <div className="col-md-6 col-lg-3">
-                        <div className="subject-card" onclick="selectSubject('shapes')">
-                            <i className="fas fa-square"></i>
-                            <h3>Shapes</h3>
-                            <p>Discover shapes!</p>
-                        </div>
-                    </div>
-                    <div className="col-md-6 col-lg-3">
-                    <Link to="/learning-modules/social-emotions" className="learning-modules-link">
-                        <div className="subject-card">
-                            <i className="fas fa-smile" style={{ marginRight:"0.5rem", marginRight: "0.5rem" }}></i>
-                            <i className="fas fa-frown" style={{ marginRight:"0.5rem", marginRight: "0.5rem" }}></i>
-                            <i className="fas fa-surprise" style={{ marginRight:"0.5rem", marginRight: "0.5rem" }}></i>
-                            <i className="fas fa-angry" style={{ marginRight:"0.5rem", marginRight: "0.5rem" }}></i>
-                            <h3>Social Emotions</h3>
-                            <p>Learn about Social cues and Emotions!</p>
-                        </div>
-                        </Link>
-                    </div>
+                    <LearningModulesCard
+                        to="maths"
+                        divname="subject-card"
+                        icons={["fa-calculator"]}
+                        title="Maths"
+                        desc="Learn numbers and counting!"
+                    />
+
+                    <LearningModulesCard
+                        to="alphabets"
+                        divname="subject-card"
+                        icons={["fa-font"]}
+                        title="Alphabet"
+                        desc="Explore letters and words!"
+                    />
+                    
+                    <LearningModulesCard
+                        to="colors"
+                        divname="subject-card"
+                        icons={["fa-paint-brush"]}
+                        title="Colors"
+                        desc="Learn about colors!"
+                    />
+
+                    <LearningModulesCard
+                        to="shapes"
+                        divname="subject-card"
+                        icons={["fa-square"]}
+                        title="Shapes"
+                        desc="Discover shapes!"
+                    />
+                    
+                    <LearningModulesCard
+                        to="social-emotions"
+                        divname="subject-card-multiple"
+                        icons={["fa-smile", "fa-frown", "fa-surprise", "fa-angry"]}
+                        title="Social Emotions"
+                        desc="Learn about Social cues and Emotions!"
+                    />
+                    
+                    <LearningModulesCard
+                        to="VoiceRecognition"
+                        divname="subject-card"
+                        icons={["fa-microphone"]}
+                        title="Speech Training"
+                        desc="Enhance the conversational skills!"
+                    />
+
                 </div>
 
-
                 <div id="feedback" className="feedback-message"></div>
-
 
                 <div className="progress">
                     <div id="progressBar" className="progress-bar" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">0%</div>
@@ -71,24 +75,21 @@ function LearningModules() {
     )
 }
 
-{/*
-<script>
-    function selectSubject(subject) {
-        const totalSubjects = 4;
-        let completedSubjects = 1;
-
-        const progressPercentage = (completedSubjects / totalSubjects) * 100;
-        const progressBar = document.getElementById('progressBar');
-        progressBar.style.width = `${progressPercentage}%`;
-        progressBar.setAttribute('aria-valuenow', progressPercentage);
-        progressBar.innerText = `${Math.round(progressPercentage)}%`;
-
-        const feedback = document.getElementById('feedback');
-        feedback.innerText = `Great! You chose ${subject.charAt(0).toUpperCase() + subject.slice(1)}!`;
-
-        setTimeout(() => {
-            window.location.href = `${subject}.html`;
-        }, 1000);
-    }
-</script>*/}
 export default LearningModules;
+
+function LearningModulesCard(props) {
+
+    return (
+        <div className="col-md-6 col-lg-3">
+            <Link to={"/learning-modules/" + props.to} className="learning-modules-link">
+                <div className={props.divname}>
+                    {props.icons.map((icon, idx) => (
+                        <i key={idx} className={"fas " + icon}></i>
+                    ))}
+                    <h3>{props.title}</h3>
+                    <p>{props.desc}</p>
+                </div>
+            </Link>
+        </div>
+    )
+}

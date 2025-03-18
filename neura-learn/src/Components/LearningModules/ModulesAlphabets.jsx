@@ -1,5 +1,6 @@
-import React from 'react';
-import "./ModulesAlphabets.css";
+import React from 'react'
+import "./ModulesAlphabets.css"
+import VideoSection from './VideoSection.jsx'
 
 const ModulesAlphabets = () => {
     return (
@@ -41,11 +42,12 @@ const ModulesAlphabets = () => {
                 <button className="nav-button" onClick={() => window.location.href = 'alphatest.html'}>Test</button>
             </div>
 
-            <div className="video-section-alphabets">
-                <h3>Video Explanation</h3>
-                <p><strong>Refer to this video for better understanding:</strong></p>
-                <iframe width="560" height="315" src="https://www.youtube.com/embed/hq3yfQnllfQ?si=x6gqUyw_rbeg8FTK&amp;start=9" title="YouTube video player" frameBorder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerPolicy="strict-origin-when-cross-origin" allowFullScreen></iframe>
-            </div>
+
+            <VideoSection
+            title = "Video Explaination"
+            desc = "Refer to this video for better understanding:"
+            src="https://www.youtube.com/embed/hq3yfQnllfQ?si=x6gqUyw_rbeg8FTK&amp;start=9"
+            />
 
         </div>
     )

@@ -18,27 +18,21 @@ function Footer() {
                         <h3 className="footer-title">🚀 Quick Links</h3>
                         <ul className="footer-links">
                             <li><Link to="/about" className="footer-link">✨ About Us</Link></li>
-                            <li><Link to="/games" className="footer-link">🎮 Our Games</Link></li>
                             <li><Link to="/contact" className="footer-link">📮 Contact</Link></li>
                         </ul>
                     </div>
                     
                     <div className="col-md-4 footer-section">
-                        <h3 className="footer-title">🌟 Follow the Fun!</h3>
+                        <h3 className="footer-title">🌟 Follow Us on </h3>
                         <div className="social-icons">
-                            <a href="#" className="social-icon">🐦</a>
-                            <a href="#" className="social-icon">📸</a>
-                            <a href="#" className="social-icon">🎵</a>
+                            <a href="#" className="social-icon">🅾</a>
+                            <a href="#" className="social-icon">ⓕ</a>
+                            <a href="#" className="social-icon">𝕏</a>
                         </div>
                     </div>
                 </div>
                 
                 <div className="footer-bottom">
-                    <p className="mb-0">
-                        <Link to="#" className="back-to-top">
-                            ⬆️ Back to Top ⭐
-                        </Link>
-                    </p>
                     <p className="copyright">
                         🎨 Made with ❤️ for our amazing learners © 2024 
                         <span className="bounce">🌟</span>
