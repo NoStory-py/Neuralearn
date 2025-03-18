@@ -38,9 +38,10 @@ const ModulesAlphabets = () => {
             </div>
 
             <div className="navigation">
-                <button className="nav-button" onclick="location.href='1.html'">Home</button>
-                <button className="nav-button" onclick="location.href='alphatest.html'">Test</button>
+                <button className="nav-button" onClick={() => window.location.href = '1.html'}>Home</button>
+                <button className="nav-button" onClick={() => window.location.href = 'alphatest.html'}>Test</button>
             </div>
+
 
             <VideoSection
             title = "Video Explaination"
@@ -54,17 +55,28 @@ const ModulesAlphabets = () => {
 
 export default ModulesAlphabets;
 
-function AlphabetsCard(props) {
+function AlphabetsCard({ letter, word }) {
+    const speak = () => {
+        const utterance = new SpeechSynthesisUtterance(`${letter} for ${word}`);
+        
+        // Adjusting voice properties for a playful sound
+        utterance.pitch = 1.3;  // Higher pitch makes it sound fun
+        utterance.rate = 0.95;   // Slightly faster for an energetic feel
+
+        const voices = speechSynthesis.getVoices();
+        // Try to find a more playful voice
+        utterance.voice = voices.find(voice => voice.name.includes("Google UK English Female")) || voices[0];
+
+        speechSynthesis.cancel(); // Stop any ongoing speech
+        speechSynthesis.speak(utterance);
+    };
 
     return (
-        <>
-            <div className="alphabet-card">
-                <div className="hover-effect"></div>
-                <div className="letter">{props.letter}</div>
-                <div className="word">{props.word}</div>
-
-            </div>
-        </>
-
-    )
+        <div className="alphabet-card" onMouseEnter={speak}>
+            <div className="hover-effect"></div>
+            <div className="letter">{letter}</div>
+            <div className="word">{word}</div>
+        </div>
+    );
 }
+
