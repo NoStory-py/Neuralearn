@@ -1,76 +1,66 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Model Tester</title>
+    <meta charset="utf-8">
+    <title>Voice Analysis</title>
     <style>
         body { font-family: Arial, sans-serif; max-width: 800px; margin: 20px auto; padding: 20px; }
-        .section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
-        button { padding: 10px 20px; margin: 5px; cursor: pointer; background-color: #4CAF50; color: white; border: none; }
-        .recording { background-color: #ff4444 !important; }
-        #results { margin-top: 20px; white-space: pre-wrap; }
+        button { padding: 10px 20px; margin: 10px; cursor: pointer; }
+        #timer { margin: 10px 0; }
     </style>
 </head>
 <body>
-    <h1>Model Test Interface</h1>
+    <h1>Voice Analysis Interface</h1>
 
-    <!-- Mode Selection -->
-    <div class="section">
+    <!-- Mode selection -->
+    <div>
         <label><input type="radio" name="mode" value="speech_accuracy" checked> Speech Accuracy</label>
         <label><input type="radio" name="mode" value="conversation"> Conversation</label>
         <label><input type="radio" name="mode" value="practice"> Practice Mode</label>
     </div>
 
-    <!-- Speech Accuracy Input -->
-    <div class="section" id="accuracyInput">
-        <h3>Speech Accuracy Test</h3>
-        <input type="text" id="targetPhrase" placeholder="Enter target phrase" style="width: 300px;">
+    <!-- Inputs for specific modes -->
+    <div id="speechAccuracyInputs">
+        <input type="text" id="targetPhrase" placeholder="Enter target phrase">
     </div>
-
-    <!-- Conversation Input -->
-    <div class="section" id="conversationInput" style="display: none;">
-        <h3>Conversation Test</h3>
-        <input type="text" id="question" placeholder="Enter question" style="width: 300px;">
+    <div id="conversationInputs" style="display:none;">
+        <input type="text" id="question" placeholder="Enter question">
     </div>
-
-    <!-- Practice Mode Input -->
-    <div class="section" id="practiceInput" style="display: none;">
-        <h3>Practice Mode</h3>
-        <input type="text" id="practiceText" placeholder="Enter your practice phrase" style="width: 300px;">
+    <div id="practiceInputs" style="display:none;">
+        <input type="text" id="practiceText" placeholder="Enter your practice text">
         <button onclick="submitPractice()">Submit Practice</button>
     </div>
 
-    <!-- Recording Interface (hidden in Practice Mode) -->
-    <div class="section" id="recordSection">
-        <button id="recordButton" onclick="toggleRecording()">
-            Start Recording
-        </button>
-        <div id="timer" style="display: none;">Recording Time: <span id="countdown">0</span>s</div>
+    <!-- Recording interface (hidden for practice mode) -->
+    <div id="recordSection">
+        <button id="recordButton" onclick="toggleRecording()">Start Recording</button>
+        <div id="timer" style="display: none;">Recording Time: <span id="timeCount">0</span>s</div>
     </div>
 
-    <!-- Results Display -->
-    <div class="section">
-        <h3>Results</h3>
-        <div id="results"></div>
-    </div>
+    <!-- Display results -->
+    <div id="results"></div>
 
     <script>
+        // Mode switching
+        document.querySelectorAll('input[name="mode"]').forEach(radio => {
+            radio.addEventListener('change', () => {
+                const mode = radio.value;
+                document.getElementById('speechAccuracyInputs').style.display = (mode === 'speech_accuracy') ? 'block' : 'none';
+                document.getElementById('conversationInputs').style.display = (mode === 'conversation') ? 'block' : 'none';
+                document.getElementById('practiceInputs').style.display = (mode === 'practice') ? 'block' : 'none';
+                document.getElementById('recordSection').style.display = (mode === 'practice') ? 'none' : 'block';
+            });
+        });
+
         let mediaRecorder;
         let audioChunks = [];
         let timerInterval;
         let isRecording = false;
-        let elapsedSeconds = 0;
-
-        // Handle mode switching
-        document.querySelectorAll('input[name="mode"]').forEach(radio => {
-            radio.addEventListener('change', () => {
-                const mode = radio.value;
-                document.getElementById('accuracyInput').style.display = (mode === 'speech_accuracy') ? 'block' : 'none';
-                document.getElementById('conversationInput').style.display = (mode === 'conversation') ? 'block' : 'none';
-                document.getElementById('practiceInput').style.display = (mode === 'practice') ? 'block' : 'none';
-                // Show recording interface only for audio modes
-                document.getElementById('recordSection').style.display = (mode === 'practice') ? 'none' : 'block';
-            });
-        });
+        let recordingStartTime = 0;
+        const recordButton = document.getElementById('recordButton');
+        const timerDiv = document.getElementById('timer');
+        const timeCount = document.getElementById('timeCount');
+        const resultsDiv = document.getElementById('results');
 
         async function toggleRecording() {
             if (!isRecording) {
@@ -78,120 +68,102 @@
                     const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
                     mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm; codecs=opus' });
                     
-                    document.getElementById('recordButton').classList.add('recording');
-                    document.getElementById('recordButton').textContent = 'Stop Recording';
-                    document.getElementById('timer').style.display = 'block';
-                    startTimer();
-
-                    mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
+                    mediaRecorder.ondataavailable = event => {
+                        audioChunks.push(event.data);
+                    };
                     mediaRecorder.start();
                     isRecording = true;
-                } catch (err) {
-                    showError("Microphone access denied!");
+                    recordButton.textContent = "Stop Recording";
+                    timerDiv.style.display = "block";
+                    recordingStartTime = Date.now();
+                    timerInterval = setInterval(() => {
+                        const elapsed = Math.floor((Date.now() - recordingStartTime) / 1000);
+                        timeCount.textContent = elapsed;
+                    }, 1000);
+                } catch (error) {
+                    alert("Error accessing microphone: " + error);
                 }
             } else {
                 mediaRecorder.stop();
-                stopTimer();
-                document.getElementById('recordButton').classList.remove('recording');
-                document.getElementById('recordButton').textContent = 'Start Recording';
-                document.getElementById('timer').style.display = 'none';
-                
-                mediaRecorder.onstop = processRecording;
                 isRecording = false;
+                recordButton.textContent = "Start Recording";
+                timerDiv.style.display = "none";
+                clearInterval(timerInterval);
+                // Once stopped, process the recording:
+                mediaRecorder.onstop = processRecording;
             }
         }
 
-        function startTimer() {
-            elapsedSeconds = 0;
-            document.getElementById('countdown').textContent = '0';
-            timerInterval = setInterval(() => {
-                elapsedSeconds++;
-                document.getElementById('countdown').textContent = elapsedSeconds;
-            }, 1000);
-        }
-
-        function stopTimer() {
-            clearInterval(timerInterval);
-            elapsedSeconds = 0;
-        }
-
         async function processRecording() {
-            const audioBlob = new Blob(audioChunks, { type: mediaRecorder.mimeType });
+            const blob = new Blob(audioChunks, { type: 'audio/webm' });
             audioChunks = [];
-            
             const formData = new FormData();
-            formData.append('audio', audioBlob, 'recording.webm');
-            
+            formData.append('audio', blob, 'recording.webm');
             const mode = document.querySelector('input[name="mode"]:checked').value;
             formData.append('mode', mode);
-
             if (mode === 'speech_accuracy') {
                 formData.append('target', document.getElementById('targetPhrase').value);
             } else if (mode === 'conversation') {
                 formData.append('question', document.getElementById('question').value);
             }
-
             try {
                 const response = await fetch('/analyze', { method: 'POST', body: formData });
-                const results = await response.json();
-                
-                if (results.error) {
-                    showError(results.error);
+                const data = await response.json();
+                if (data.error) {
+                    resultsDiv.textContent = "Error: " + data.error;
                 } else {
-                    displayResults(results);
+                    displayResults(data);
                 }
             } catch (error) {
-                showError("Analysis failed: " + error.message);
+                resultsDiv.textContent = "Error: " + error.message;
             }
         }
 
-        // Function for practice mode submission
         async function submitPractice() {
             const practiceText = document.getElementById('practiceText').value;
             const formData = new FormData();
             formData.append('mode', 'practice');
             formData.append('practice_text', practiceText);
-
             try {
                 const response = await fetch('/analyze', { method: 'POST', body: formData });
-                const results = await response.json();
-                
-                if (results.error) {
-                    showError(results.error);
+                const data = await response.json();
+                if (data.error) {
+                    resultsDiv.textContent = "Error: " + data.error;
                 } else {
-                    displayResults(results);
+                    displayResults(data);
                 }
             } catch (error) {
-                showError("Practice analysis failed: " + error.message);
+                resultsDiv.textContent = "Error: " + error.message;
             }
         }
 
         function displayResults(data) {
             let output = "";
+            if (data.text) {
+                output += "Recognized Text: " + data.text + "\n";
+            }
             if (data.accuracy !== undefined) {
-                output += `Accuracy: ${data.accuracy}%\n`;
-                output += `Emotion: ${data.emotion} (${(data.confidence * 100).toFixed(1)}%)\n`;
+                output += "Accuracy: " + data.accuracy + "%\n";
+            }
+            if (data.emotion) {
+                output += "Emotion: " + data.emotion + "\n";
+            }
+            if (data.confidence !== undefined) {
+                output += "Confidence: " + (data.confidence * 100).toFixed(1) + "%\n";
             }
             if (data.relevance) {
-                output += `Relevance: ${data.relevance} (${(data.confidence * 100).toFixed(1)}%)\n`;
-                output += `Response Time: ${data.response_time}s\n`;
+                output += "Relevance: " + data.relevance + "\n";
             }
             if (data.audio_features) {
-                output += `Duration: ${data.audio_features.duration.toFixed(2)}s\n`;
-                output += `Pitch Mean: ${data.audio_features.pitch_mean.toFixed(2)}\n`;
-                output += `Pitch Variation: ${data.audio_features.pitch_std.toFixed(2)}\n`;
+                output += "Duration: " + data.audio_features.duration.toFixed(2) + "s\n";
+                output += "Pitch Mean: " + data.audio_features.pitch_mean.toFixed(2) + "\n";
+                output += "Pitch Variation: " + data.audio_features.pitch_std.toFixed(2) + "\n";
             }
             if (data.suggestions && data.suggestions.length > 0) {
                 output += "\nSuggestions:\n";
-                data.suggestions.forEach(suggestion => {
-                    output += `- ${suggestion}\n`;
-                });
+                data.suggestions.forEach(s => output += "- " + s + "\n");
             }
-            document.getElementById('results').textContent = output;
-        }
-
-        function showError(message) {
-            document.getElementById('results').textContent = "Error: " + message;
+            resultsDiv.textContent = output;
         }
     </script>
 </body>

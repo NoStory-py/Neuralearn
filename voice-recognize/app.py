@@ -1,28 +1,37 @@
-# Add this FIRST to ensure FFmpeg path is recognized
 import os
-os.environ['PATH'] += r';C:\ffmpeg\bin'
-
-from flask import Flask, render_template, request, jsonify
-from flask_cors import CORS
-from transformers import AutoModelForSequenceClassification, AutoTokenizer
-from speech_recognition import Recognizer, AudioFile, UnknownValueError
-import librosa
-import numpy as np
-import torch
 import tempfile
 import time
-from Levenshtein import ratio as similarity_ratio
-from pydub import AudioSegment
 import mimetypes
+import numpy as np
+import torch
+import librosa
+from Levenshtein import ratio as similarity_ratio
+from fastapi import FastAPI, Request, HTTPException, UploadFile, File, Form
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse, HTMLResponse
+from fastapi.templating import Jinja2Templates
+from pydub import AudioSegment
+from speech_recognition import Recognizer, AudioFile, UnknownValueError
+from transformers import AutoModelForSequenceClassification, AutoTokenizer
 
-# Explicit FFmpeg configuration
-AudioSegment.ffmpeg = r"C:\ffmpeg\bin\ffmpeg.exe"
-
-app = Flask(__name__)
-CORS(app)  # Enable CORS to allow requests from your React frontend
+# Set up FFmpeg paths (update as needed)
+os.environ['PATH'] += r'C:\ProgramData\chocolatey\bin'
+AudioSegment.ffmpeg = r"C:\ProgramData\chocolatey\bin\ffmpeg.exe"
 
 # Add MIME type for webm files
 mimetypes.add_type('audio/webm', '.webm')
+
+app = FastAPI()
+templates = Jinja2Templates(directory="templates")
+
+# Configure CORS (update origins as needed)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # Configuration
 MODEL_PATHS = {
@@ -30,10 +39,10 @@ MODEL_PATHS = {
     'mnli': './mnli_model'
 }
 MAX_AUDIO_DURATION = 30  # seconds
-MIN_AUDIO_LENGTH = 0.5   # Minimum valid audio length in seconds
-SILENCE_THRESHOLD = 0.01  # RMS threshold for considering audio as silent
+MIN_AUDIO_LENGTH = 0.1   # seconds
+SILENCE_THRESHOLD = 0.005  # adjusted RMS threshold
 
-# Load models and label mappings
+# Load models and tokenizers
 emotion_model = AutoModelForSequenceClassification.from_pretrained(MODEL_PATHS['emotion'])
 emotion_tokenizer = AutoTokenizer.from_pretrained(MODEL_PATHS['emotion'])
 mnli_model = AutoModelForSequenceClassification.from_pretrained(MODEL_PATHS['mnli'])
@@ -47,35 +56,49 @@ EMOTION_LABELS = [
     'joy', 'love', 'nervousness', 'optimism', 'pride', 'realization',
     'relief', 'remorse', 'sadness', 'surprise', 'neutral'
 ]
-
 MNLI_LABELS = ['entailment', 'neutral', 'contradiction']
 
-# Update model label mappings
+# Update label mappings
 emotion_model.config.id2label = {i: label for i, label in enumerate(EMOTION_LABELS)}
 mnli_model.config.id2label = {0: 'entailment', 1: 'neutral', 2: 'contradiction'}
 
 recognizer = Recognizer()
-
-# Global storage for previous phrases (for progress & echolalia detection)
 previous_phrases = []
 
 def is_silent(audio_path: str) -> bool:
-    """Check if audio is silent using RMS energy"""
-    y, sr = librosa.load(audio_path, sr=None)
-    rms = librosa.feature.rms(y=y)
-    return np.max(rms) < SILENCE_THRESHOLD
+    """Check if audio is silent using RMS energy."""
+    try:
+        y, sr = librosa.load(audio_path, sr=None)
+        rms = librosa.feature.rms(y=y)
+        max_rms = np.max(rms)
+        print(f"Max RMS value: {max_rms}")  # Debug print to monitor RMS values
+        return max_rms < SILENCE_THRESHOLD
+    except Exception as e:
+        print(f"Silence detection error: {e}")
+        return True
 
-@app.route('/analyze', methods=['POST'])
-def analyze():
-    mode = request.form.get('mode', 'speech_accuracy')
-    suggestions = []  # list to accumulate suggestions
+@app.get("/", response_class=HTMLResponse)
+async def index(request: Request):
+    # Render a template if needed; otherwise you can remove this endpoint.
+    return templates.TemplateResponse("index.html", {"request": request})
+
+@app.post("/analyze")
+async def analyze(
+    request: Request,
+    mode: str = Form("speech_accuracy"),
+    practice_text: str = Form(None),
+    target: str = Form(""),
+    question: str = Form(""),
+    audio: UploadFile = File(None)
+):
+    suggestions = []
     result = {}
-    
+    start_time = time.time()
+
     # ----- Practice Mode (Text Input) -----
     if mode == 'practice':
-        practice_text = request.form.get('practice_text', '').strip()
-        if not practice_text:
-            return jsonify({'error': 'No practice text provided'}), 400
+        if not practice_text or practice_text.strip() == "":
+            raise HTTPException(status_code=400, detail="No practice text provided")
         result['text'] = practice_text
 
         # Emotion analysis on practice text
@@ -86,52 +109,68 @@ def analyze():
         result['emotion'] = emotion_model.config.id2label[probs.argmax().item()]
         result['confidence'] = round(probs.max().item(), 4)
 
-        # Echolalia check: compare with previous practice entries
-        echolalia_detected = any(similarity_ratio(practice_text.lower(), prev.lower()) > 0.8 for prev in previous_phrases)
-        if echolalia_detected:
+        # Echolalia check
+        if any(similarity_ratio(practice_text.lower(), prev.lower()) > 0.8 for prev in previous_phrases):
             suggestions.append("Echolalia detected. Try to express new ideas rather than repeating phrases.")
         previous_phrases.append(practice_text)
         result['suggestions'] = suggestions
-        return jsonify(result)
-    
+        return JSONResponse(result)
+
     # ----- Audio-based Modes (Speech Accuracy & Conversation) -----
+    if not audio:
+        raise HTTPException(status_code=400, detail="No audio file provided")
+
     audio_path = None
     wav_path = None
-    start_time = time.time()
-    try:
-        if 'audio' not in request.files:
-            return jsonify({'error': 'No audio file provided'}), 400
 
-        audio_file = request.files['audio']
+    try:
+        # Save the uploaded audio file as WebM (or another format)
         with tempfile.NamedTemporaryFile(suffix='.webm', delete=False) as tmp_file:
             audio_path = tmp_file.name
-            audio_file.save(audio_path)
+            content = await audio.read()
+            tmp_file.write(content)
 
-        # Convert to WAV using pydub
-        audio = AudioSegment.from_file(audio_path)
+        # Check file extension (optional, if needed)
+        ext = os.path.splitext(audio.filename)[1].lower()
+        if ext not in ['.webm', '.wav']:
+            print(f"Unexpected file extension: {ext}. Attempting to process anyway.")
+
+        # Convert file to WAV using pydub
+        try:
+            # Let pydub auto-detect the format if possible
+            audio_segment = AudioSegment.from_file(audio_path)
+        except Exception as e:
+            print(f"Error reading audio file: {e}")
+            raise HTTPException(status_code=400, detail="Invalid audio format")
         wav_path = audio_path + ".wav"
-        audio.export(wav_path, format="wav")
+        try:
+            # Force conversion to mono and 16kHz for better consistency
+            audio_segment.export(wav_path, format="wav", parameters=["-ac", "1", "-ar", "16000"])
+        except Exception as e:
+            print(f"Error exporting WAV file: {e}")
+            raise HTTPException(status_code=500, detail="Audio conversion failed")
 
         # Check for silence
         if is_silent(wav_path):
-            return jsonify({'error': 'No voice detected'}), 400
+            raise HTTPException(status_code=400, detail="No voice detected")
 
         # Check audio duration
         duration = librosa.get_duration(filename=wav_path)
         if duration < MIN_AUDIO_LENGTH:
-            return jsonify({'error': 'Audio too short (minimum 0.5 seconds)'}), 400
+            raise HTTPException(status_code=400, detail="Audio too short (minimum 0.5 seconds)")
+        result['audio_features'] = {'duration': duration}
 
-        # Load audio data
+        # Load audio data for feature extraction
         y, sr = librosa.load(wav_path, sr=None)
 
-        # Speech recognition using Google Speech Recognition
+        # Speech recognition using Google Speech Recognition with ambient noise calibration
         with AudioFile(wav_path) as source:
             try:
+                recognizer.adjust_for_ambient_noise(source)
                 audio_data = recognizer.record(source, duration=MAX_AUDIO_DURATION)
                 text = recognizer.recognize_google(audio_data, show_all=False)
             except UnknownValueError:
-                return jsonify({'error': 'No speech detected'}), 400
-
+                raise HTTPException(status_code=400, detail="No speech detected")
         result['text'] = text
 
         # Audio feature extraction: pitch and MFCC analysis
@@ -146,32 +185,32 @@ def analyze():
         }
         result['audio_features'] = audio_features
 
-        # Echolalia detection: compare recognized text with previous phrases
-        echolalia_detected = any(similarity_ratio(text.lower(), prev.lower()) > 0.8 for prev in previous_phrases)
-        if echolalia_detected:
+        # Echolalia detection
+        if any(similarity_ratio(text.lower(), prev.lower()) > 0.8 for prev in previous_phrases):
             suggestions.append("Echolalia detected. Try to express new ideas instead of repeating phrases.")
         previous_phrases.append(text)
 
-        # Monotone detection: low pitch variation suggests monotone speech
+        # Monotone detection
         if pitch_std < 20:
             suggestions.append("Monotone speech detected. Try varying your tone and pitch for more expressive speech.")
 
         # ----- Mode-specific processing -----
         if mode == 'speech_accuracy':
-            target = request.form.get('target', '')
-            acc = similarity_ratio(text.lower(), target.lower()) * 100
-            result['accuracy'] = round(acc, 2)
+            if target:
+                acc = similarity_ratio(text.lower(), target.lower()) * 100
+                result['accuracy'] = round(acc, 2)
             inputs = emotion_tokenizer(text, return_tensors="pt", truncation=True)
             with torch.no_grad():
                 outputs = emotion_model(**inputs)
             probs = torch.nn.functional.softmax(outputs.logits, dim=-1)
             result['emotion'] = emotion_model.config.id2label[probs.argmax().item()]
             result['confidence'] = round(probs.max().item(), 4)
-            if acc < 70:
+            if target and (acc < 70):
                 suggestions.append("Pronunciation might need improvement. Practice articulating each word clearly.")
 
         elif mode == 'conversation':
-            question = request.form.get('question', '')
+            if not question:
+                raise HTTPException(status_code=400, detail="No question provided for conversation mode")
             inputs = mnli_tokenizer(question, text, return_tensors="pt", truncation=True)
             with torch.no_grad():
                 outputs = mnli_model(**inputs)
@@ -185,12 +224,13 @@ def analyze():
                 suggestions.append("Response seems off-topic. Try to answer more directly and relevantly.")
 
         result['suggestions'] = suggestions
-        return jsonify(result)
+        return JSONResponse(result)
 
+    except HTTPException as he:
+        raise he
     except Exception as e:
-        app.logger.error(f"Error: {str(e)}")
-        return jsonify({'error': 'Server processing error'}), 500
-
+        print(f"Server processing error: {e}")
+        raise HTTPException(status_code=500, detail="Server processing error")
     finally:
         # Clean up temporary files
         for path in [audio_path, wav_path]:
@@ -201,4 +241,5 @@ def analyze():
                     pass
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000)
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=9000)
