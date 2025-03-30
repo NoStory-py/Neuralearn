@@ -1,0 +1,285 @@
+/* Background styling */
+.background-container {
+    position: relative;
+    background: url('/public/Images/convo_back.jpg') no-repeat center top;
+    background-size: cover;
+    min-height: 100vh;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    font-family: 'Comic Neue', cursive;
+}
+  
+/* Whiteboard container: locked into a fixed area of the canvas */
+.whiteboard-container {
+    position: absolute;
+    top: 20%;               /* Adjust as needed */
+    left: 50%;
+    transform: translateX(-50%);
+    width: 80%;
+    max-width: 800px;
+    padding: 1.5rem;
+    background: transparent;  /* Fully transparent */
+    border-radius: 30px;
+    box-sizing: border-box;
+  }
+  
+/* Single-line question header with bordered score, question text, and counter */
+.question-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 4rem;
+}
+  
+/* Individual elements with refined borders and rounded corners */
+.score-star,
+.question-text,
+.question-counter {
+    padding: 0.5rem 1rem;
+    border: 2px solid #4a90e2;
+    border-radius: 20px;
+    background: #fff;
+    text-align: center;
+}
+  
+/* Specific styling for the score element */
+.score-star {
+    color: #ff6b6b;
+    border-color: #ffd700;
+    font-weight: bold;
+    flex-shrink: 0;
+}
+  
+/* Styling for the question text */
+.question-text {
+    flex: 1;
+    margin: 0 1rem;
+    font-size: 1.6rem;
+    color: #2c3e50;
+    text-align: center;
+}
+  
+/* Styling for the question counter */
+.question-counter {
+    color: #2c3e50;
+    font-weight: bold;
+    flex-shrink: 0;
+}
+  
+/* Input toggles */
+.input-toggle {
+    display: flex;
+    gap: 1rem;
+    margin: 1.5rem 0;
+}
+  
+.toggle-btn {
+    flex: 1;
+    padding: 1rem;
+    border: none;
+    border-radius: 15px;
+    background: #b0e57c;
+    cursor: pointer;
+    font-size: 1.1rem;
+    transition: all 0.3s ease;
+    color: #2c3e50;
+}
+  
+.toggle-btn.active {
+    background: #ffb347;
+    color: white;
+    transform: scale(1.03);
+    box-shadow: 0 4px 8px rgba(255, 179, 71, 0.3);
+}
+  
+/* Voice controls */
+.voice-controls {
+    text-align: center;
+    margin: 1.5rem 0;
+}
+  
+.record-btn {
+    padding: 1rem 1.8rem;
+    border: none;
+    border-radius: 30px;
+    background: #ff6b6b;
+    color: white;
+    font-size: 1.1rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+  
+.record-btn.recording {
+    background: #4a90e2;
+    transform: scale(1.03);
+}
+  
+.recording-hint {
+    color: #666;
+    margin-top: 0.8rem;
+    font-style: italic;
+}
+  
+/* Text input */
+.text-input textarea {
+    width: 100%;
+    padding: 1.2rem;
+    border: 2px solid #4a90e2;
+    border-radius: 15px;
+    font-size: 1.1rem;
+    min-height: 100px;
+    resize: vertical;
+    background: #f8f9fa;
+    box-sizing: border-box;
+}
+  
+/* Analyze button */
+.analyze-btn {
+    width: 15rem;
+    padding: 1.2rem;
+    border: none;
+    border-radius: 30px;
+    background: #4a90e2;
+    color: white;
+    font-size: 1.3rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    margin-top: 1.5rem;
+    display: block;       /* Make it a block element */
+    margin-left: auto;    /* Center horizontally */
+    margin-right: auto;
+}
+  
+.analyze-btn:hover {
+    background: #357abd;
+    transform: scale(1.02);
+}
+  
+/* Feedback box */
+.feedback-box {
+    margin-top: 1.5rem;
+    padding: 1.5rem;
+    border-radius: 15px;
+    animation: slideIn 0.5s ease-out;
+    background: #fff;
+}
+  
+.feedback-box.positive {
+    background: #e8ffee;
+    border: 2px solid #28a745;
+}
+  
+.feedback-box.improvement-needed {
+    background: #fff3e0;
+    border: 2px solid #ffc107;
+}
+  
+.positive-message,
+.improvement-message {
+    font-size: 1.5rem;
+    text-align: center;
+    margin-bottom: 0.8rem;
+}
+  
+.positive-message {
+    color: #28a745;
+}
+  
+.improvement-message {
+    color: #ffc107;
+}
+  
+.suggestion {
+    padding: 0.8rem;
+    margin: 0.8rem 0;
+    background: #fff;
+    border-radius: 10px;
+    font-size: 1rem;
+}
+  
+.question-reminder {
+    margin-top: 1rem;
+    color: #666;
+    font-style: italic;
+    text-align: center;
+}
+  
+/* Error messages */
+.error-box {
+    margin-top: 1.5rem;
+    padding: 1rem;
+    background: #ffebee;
+    border: 2px solid #ff5252;
+    border-radius: 15px;
+    color: #d32f2f;
+    text-align: center;
+}
+  
+/* Animations */
+@keyframes slideIn {
+    from {
+        transform: translateY(30px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+.question-text:hover,
+.suggestion:hover,
+.question-reminder:hover {
+  cursor: pointer;
+  background-color: rgba(255, 255, 255, 0.9);
+  transition: background-color 0.2s ease;
+}
+
+.question-text:hover {
+  transform: scale(1.02);
+}
+
+.suggestion:hover {
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+
+/* Speaking Animation */
+@keyframes pulse-wave {
+  0% { box-shadow: 0 0 0 0 rgba(74, 144, 226, 0.4); }
+  70% { box-shadow: 0 0 0 10px rgba(74, 144, 226, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(74, 144, 226, 0); }
+}
+
+.speaking {
+  animation: pulse-wave 1.5s infinite;
+  position: relative;
+}
+
+/* Accessibility Improvements */
+button:focus {
+  outline: 3px solid #4a90e2;
+}
+
+/* Response Text Styling */
+.encouragement {
+  text-align: center;
+  color: #28a745;
+  font-weight: bold;
+  margin-top: 1rem;
+}
+  
+/* Media queries for smaller screens */
+@media (max-width: 768px) {
+    .question-text {
+        font-size: 1.4rem;
+    }
+    .toggle-btn {
+        font-size: 1rem;
+        padding: 0.8rem;
+    }
+    .whiteboard-container {
+        top: 10%;
+        width: 90%;
+    }
+}

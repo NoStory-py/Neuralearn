@@ -1,0 +1,105 @@
+/* VoiceRecognition.css */
+.voice-body-learning {
+  background: linear-gradient(45deg, #ffde59, #ffab73, #ff6464);
+  animation: voiceBackgroundAnimation 10s ease infinite;
+  color: #333;
+  font-family: 'Comic Sans MS', 'Comic Sans', cursive;
+  padding: 1.5rem;
+  min-height: 100vh;
+}
+
+@keyframes voiceBackgroundAnimation {
+  0% { background-color: #ffde59; }
+  50% { background-color: #ffab73; }
+  100% { background-color: #ff6464; }
+}
+
+.voice-title {
+  color: #4b4b4b;
+  font-size: 2.5rem;
+  text-shadow: 2px 2px 5px #fff;
+  margin-top: 0;
+  text-align: center;
+  padding: 1rem 0;
+}
+
+.voice-subject-selection {
+  text-align: center;
+  margin-top: 40px;
+}
+
+.voice-card {
+  margin: 20px;
+  padding: 30px;
+  text-align: center;
+  background-color: #fbe6a2;
+  border-radius: 15px;
+  transition: transform 0.3s, background-color 0.3s;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+  font-weight: bold;
+  font-size: 1.2rem;
+  min-height: 200px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.voice-card:hover {
+  background-color: #ffd966;
+  transform: translateY(-10px) scale(1.08);
+  cursor: pointer;
+}
+
+.voice-card i {
+  color: #ff6f91;
+  font-size: 2.5rem;
+  margin-bottom: 1.5rem;
+  animation: voiceIconBounce 2s infinite;
+}
+
+@keyframes voiceIconBounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+
+.voice-progress {
+  margin-top: 30px;
+  height: 30px;
+  border-radius: 10px;
+  background-color: #f0f0f0;
+}
+
+.voice-progress-bar {
+  transition: width 0.6s ease;
+  background-color: #ff6f91;
+  width: 0%;
+  height: 100%;
+  border-radius: 10px;
+}
+
+.voice-link {
+  color: #333;
+  text-decoration: none;
+}
+
+/* Multiple icons styling */
+.voice-card i:not(:first-child) {
+  margin-left: 0.5rem;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .voice-card {
+      margin: 10px;
+      padding: 20px;
+      font-size: 1rem;
+  }
+  
+  .voice-title {
+      font-size: 2rem;
+  }
+  
+  .voice-card i {
+      font-size: 2rem;
+  }
+}
