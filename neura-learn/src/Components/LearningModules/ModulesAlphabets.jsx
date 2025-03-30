@@ -1,6 +1,7 @@
 import React from 'react'
 import "./ModulesAlphabets.css"
 import VideoSection from './VideoSection.jsx'
+import Navigation from './Navigation.jsx'
 
 const ModulesAlphabets = () => {
     return (
@@ -37,11 +38,10 @@ const ModulesAlphabets = () => {
                 <AlphabetsCard letter="Z" word="Zebra" />
             </div>
 
-            <div className="navigation">
-                <button className="nav-button" onClick={() => window.location.href = '1.html'}>Home</button>
-                <button className="nav-button" onClick={() => window.location.href = 'alphatest.html'}>Test</button>
-            </div>
-
+            <Navigation
+            name = "Start Test"
+            link = "/learning-modules/alphabets/test"
+            />
 
             <VideoSection
             title = "Video Explaination"

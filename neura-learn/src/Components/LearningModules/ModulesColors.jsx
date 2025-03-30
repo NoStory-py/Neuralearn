@@ -1,6 +1,7 @@
 import { useState } from "react";
 import './ModulesColors.css'
 import VideoSection from './VideoSection'
+import Navigation from './Navigation';
 
 function ModulesColors() {
   const [selectedColor, setSelectedColor] = useState(null);
@@ -24,19 +25,20 @@ function ModulesColors() {
       <h1><b>Learn Colors!</b></h1>
       <div
         className="large-color-box"
-        style={{ backgroundColor: selectedColor || "transparent", display: selectedColor ? "block" : "none"}}
+        style={{ backgroundColor: selectedColor || "transparent", display: selectedColor ? "block" : "none" }}
         aria-live="polite"
       >
         {selectedColor && (
-          <>
-          <strong>{selectedColor.charAt(0).toUpperCase() + selectedColor.slice(1)}</strong>
-          : {meaning}
-          </>
+          <p className="large-color-box-text">
+            <strong>{selectedColor.charAt(0).toUpperCase() + selectedColor.slice(1)}</strong>
+            : {meaning}
+          </p>
         )}
       </div>
 
       <div>
         <h2><b>Colors and Their Meanings</b></h2>
+        <div className = "colors-container">
         {colors.map(({ color, meaning }) => (
           <div className="card" key={color}>
             <div
@@ -45,21 +47,22 @@ function ModulesColors() {
               onClick={() => showColor(color, meaning)}
             ></div>
             <p>
-              <strong>{color.charAt(0).toUpperCase() + color.slice(1)}</strong>: {meaning}
+              <strong>{color.charAt(0).toUpperCase() + color.slice(1)}:</strong> {meaning}
             </p>
           </div>
         ))}
+        </div>
       </div>
 
-      <div className="navigation">
-        <button className="nav-button" onClick={() => (window.location.href = "1.html")}>Home</button>
-        <button className="nav-button" onClick={() => (window.location.href = "colortest.html")}>Take Test</button>
-      </div>
+      <Navigation
+      name="Start Test"
+      link = "/learning-modules/colors/test"
+      />
 
       <VideoSection
-            title = "Video Explaination"
-            desc = "Refer to this video for better understanding:"
-            src="https://www.youtube.com/embed/qhOTU8_1Af4"
+        title="Video Explaination"
+        desc="Refer to this video for better understanding:"
+        src="https://www.youtube.com/embed/qhOTU8_1Af4"
       />
 
     </div>

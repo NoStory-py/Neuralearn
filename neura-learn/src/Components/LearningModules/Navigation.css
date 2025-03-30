@@ -1,0 +1,20 @@
+.modules-navigation {
+    margin-top: 20px;
+}
+
+.test-nav-button {
+    margin: 5px;
+    padding: 10px 15px;
+    border: 1px solid #1a73e8;
+    background-color: #e6f7ff;
+    color: #1a73e8;
+    font-weight: bold;
+    cursor: pointer;
+    border-radius: 8px;
+    transition: background-color 0.3s, transform 0.2s;
+}
+
+.test-nav-button:hover {
+    background-color: #d4ebf7;
+    transform: translateY(-2px);
+}

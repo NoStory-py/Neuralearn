@@ -291,5 +291,4 @@ async def transcribe_audio(wav_path: str):
         raise HTTPException(500, detail=f"Transcription error: {str(e)}")
 
 if __name__ == '__main__':
-    import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=9000)
+    app.run(host='0.0.0.0', port=5000)
