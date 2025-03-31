@@ -3,7 +3,7 @@ import Board from "./Board";
 import Keyboard from "./Keyboard";
 import GameOver from "./GameOver";
 import { boardDefault, generateWordSet } from "./Words";
-//import "./WordleGame.css"; 
+import "./WordleGame.css"; 
 
 export const GameContext = createContext();
 

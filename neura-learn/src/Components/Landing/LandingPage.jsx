@@ -2,6 +2,9 @@ import { Link } from 'react-router-dom';
 import './LandingPage.css';
 
 function LandingPage() {
+  const isAuthenticated = localStorage.getItem("token");
+
+
 
   return (
     <>
@@ -18,7 +21,9 @@ function LandingPage() {
               <h2 data-aos="fade-up" data-aos-delay="100">Learning Today,<br />Leading Tomorrow</h2>
               <p data-aos="fade-up" data-aos-delay="200">A Learning website for children with autism spectrum disorder</p>
               <div className="d-flex mt-4" data-aos="fade-up" data-aos-delay="300">
-                <Link className="btn-get-started" to="/login">Get started</Link>
+                <Link className="btn-get-started" to={isAuthenticated ? "/home" : "/login"}>
+                  {isAuthenticated ? "Go to Home" : "Get Started"}
+                </Link>
               </div>
             </div>
 
@@ -234,7 +239,7 @@ function LandingPage() {
           </section>
 
         </main>
-    </div>
+      </div>
     </>
   )
 }

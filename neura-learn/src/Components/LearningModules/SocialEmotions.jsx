@@ -9,7 +9,7 @@ const CameraAccess = () => {
   const [error, setError] = useState(null);
 
   const videoConstraints = {
-    facingMode: "facingMode",
+    facingMode: "user",
     width: { ideal: 720 },
     height: { ideal: 1280 },
   };
@@ -22,7 +22,6 @@ const CameraAccess = () => {
       // Convert base64 to binary
       const byteString = atob(imageSrc.split(",")[1]);
       const mimeString = imageSrc.split(",")[0].split(":")[1].split(";")[0];
-
       const ab = new ArrayBuffer(byteString.length);
       const ia = new Uint8Array(ab);
       for (let i = 0; i < byteString.length; i++) {
@@ -30,17 +29,15 @@ const CameraAccess = () => {
       }
       const blob = new Blob([ab], { type: mimeString });
 
+      // Send to FastAPI backend
       const formData = new FormData();
-      formData.append("image", blob, "capture.jpg");
+      formData.append("file", blob, "capture.jpg");
 
-      const response = await axios.post("http://localhost:5000/api/predict-emotion", formData, {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
+      const response = await axios.post("http://localhost:8000/model/predict-emotion", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
       });
 
-      setEmotion(response.data.emotion); // Update with backend response
-
+      setEmotion(response.data.emotion);
     } catch (err) {
       console.error("Error sending image to backend:", err);
       setError("Error analyzing emotion.");
@@ -61,20 +58,14 @@ const CameraAccess = () => {
             screenshotFormat="image/jpeg"
             videoConstraints={videoConstraints}
             className="webcam-video"
-            onUserMediaError={() =>
-              setError("Camera access denied. Please enable permissions.")
-            }
+            onUserMediaError={() => setError("Camera access denied. Please enable permissions.")}
           />
           <button id="btn-capture-socialemotion" className="btn-capture" onClick={capture}>
             📸 Capture
           </button>
-
           {emotion && (
-            <div className="display-emotion">
-              😊 Detected Emotion: <strong>{emotion}</strong>
-            </div>
+            <div className="display-emotion">😊 Detected Emotion: <strong>{emotion}</strong></div>
           )}
-
         </>
       )}
     </div>
@@ -89,13 +80,10 @@ const SocialEmotions = () => {
     <div className="social-emotions-container">
       <h1 className="app-title">Emotion Recognition Helper</h1>
       <p className="app-description">
-        Look at the camera and we'll help you understand the emotions!
+        Look at the camera and we'll help you understand your emotions!
       </p>
-
       {!hasCameraSupport ? (
-        <div className="error-message">
-          ⚠️ Camera access is not supported in your browser.
-        </div>
+        <div className="error-message">⚠️ Camera access is not supported in your browser.</div>
       ) : cameraOn ? (
         <>
           <button id="btn-control-socialemotion" className="btn btn-control" onClick={() => setCameraOn(false)}>
@@ -108,10 +96,8 @@ const SocialEmotions = () => {
           🎬 Start Recognition
         </button>
       )}
-
       <div className="safety-notice">
-        🔒 We never store or share your camera feed. Everything stays private on
-        your device.
+        🔒 We never store or share your camera feed. Everything stays private on your device.
       </div>
     </div>
   );
