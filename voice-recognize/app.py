@@ -21,11 +21,13 @@ from collections import defaultdict, Counter
 client = MongoClient("mongodb://localhost:27017/")
 db = client["speech_therapy"]
 conversations_collection = db["conversation_history"]
+speech_results_collection = db["speech_results"]
 
 # Session tracking
 session_phrase_counters = defaultdict(Counter)
 session_last_used = {}
-SESSION_TTL = 3600  # 1 hour expiration
+SESSION_TTL = 7200  # 2 hours expiration
+session_word_history = defaultdict(list)
 
 def cleanup_sessions():
     now = time.time()
@@ -33,6 +35,7 @@ def cleanup_sessions():
     for sid in stale_sessions:
         del session_phrase_counters[sid]
         del session_last_used[sid]
+        del session_word_history[sid]
     threading.Timer(3600, cleanup_sessions).start()
 
 cleanup_sessions()
@@ -75,7 +78,9 @@ QUESTION_SETS = {
     ]
 }
 
-# Keyword checks for specific questions (including favorite color)
+SPEECH_WORDS = ["apple", "ball", "cat", "dog", "egg", "fish", "goat", "hat", "ice", "juice"]
+ECHOLALIA_PHRASE = "please repeat what did i say just now"
+
 KEYWORD_CHECKS = {
     "Are you a boy or girl?": ["boy", "girl", "male", "female"],
     "How old are you?": [r"\d+", "year"],
@@ -93,26 +98,13 @@ MIN_AUDIO_LENGTH = 0.1
 ECHOLALIA_THRESHOLD = 0.85
 recognizer = Recognizer()
 
-def generate_declarative_premise(question: str) -> str:
-    patterns = {
-        r"what's? your name\?": "The speaker states their personal name directly",
-        r"are you a boy or girl\?": "The speaker explicitly states their gender as either male or female",
-        r"how old are you\?": "The speaker states their age using a number followed by 'years old'",
-        r"what's your favorite color\?": "The speaker names a specific color preference",
-        r"do you like reading\?": "The speaker explicitly confirms or denies enjoying reading",
-        r"how are you feeling\?": "The speaker describes their current emotional state"
-    }
-    
-    question_lower = question.lower()
-    for pattern, template in patterns.items():
-        if re.match(pattern, question_lower):
-            return template
-    
-    return f"The statement '{question.replace('?', '').capitalize()}' is being explicitly discussed"
-
 @app.get("/questions/{set_id}")
 async def get_question_set(set_id: str):
     return JSONResponse([q["question"] for q in QUESTION_SETS.get(set_id, [])])
+
+@app.get("/api/speech-training/words")
+async def get_speech_words():
+    return JSONResponse({"words": SPEECH_WORDS})
 
 @app.post("/analyze")
 async def analyze(
@@ -124,7 +116,7 @@ async def analyze(
 ):
     suggestions = []
     response_text = ""
-    is_correct = False  # Flag to indicate if the answer is acceptable and next question can load
+    is_correct = False
     
     try:
         session_last_used[session_id] = time.time()
@@ -140,26 +132,45 @@ async def analyze(
         if not response_text:
             raise HTTPException(400, "No response provided")
 
-        # Determine the premise from the question set; if not found, generate one.
+        if mode == "speech_training":
+            normalized_response = response_text.lower().strip()
+            normalized_question = question.lower().strip()
+            
+            is_correct = normalized_response == normalized_question
+            confidence = similarity_ratio(normalized_response, normalized_question)
+            is_echolalia = similarity_ratio(normalized_response, ECHOLALIA_PHRASE) > 0.85
+
+            response_data = {
+                "is_correct": is_correct,
+                "confidence": float(confidence),
+                "is_echolalia": is_echolalia,
+                "expected_word": question,
+                "response": response_text,
+                "timestamp": datetime.now().isoformat()
+            }
+
+            speech_results_collection.insert_one({
+                "session_id": session_id,
+                **response_data
+            })
+
+            return JSONResponse(response_data)
+
         premise = next(
             (q["premise"] for q_set in QUESTION_SETS.values() 
              for q in q_set if q["question"] == question),
             generate_declarative_premise(question)
         )
 
-        # Special handling for specific questions
         is_name_question = question.lower() == "what's your name?"
         is_age_question = question.lower() == "how old are you?"
         is_color_question = question.lower() == "what's your favorite color?"
         
         if is_name_question:
-            # For name question, bypass MNLI by doing a manual check
             premise = "The speaker states their personal name directly"
-            # Force a high confidence entailment
             mnli_probs = torch.tensor([[2.0, -1.0, -1.0]])
             relevance = 'entailment'
         elif is_age_question and re.search(r"\d+", response_text):
-            # For age question, bypass MNLI if a number is present
             premise = "The speaker states their age using a number followed by 'years old'"
             mnli_probs = torch.tensor([[2.0, -1.0, -1.0]])
             relevance = 'entailment'
@@ -179,7 +190,6 @@ async def analyze(
         normalized_response = response_text.lower().strip()
         normalized_question = question.lower().strip()
 
-        # Echolalia detection: if response is too similar to the question.
         if similarity_ratio(normalized_response, normalized_question) > ECHOLALIA_THRESHOLD:
             suggestions.append("Great repeating! Now try to answer in your own words")
         elif phrase_counter[normalized_response] >= 1:
@@ -187,7 +197,6 @@ async def analyze(
 
         phrase_counter[normalized_response] += 1
 
-        # Keyword validation for specific questions
         if question in KEYWORD_CHECKS:
             patterns = KEYWORD_CHECKS[question]
             match_found = any(re.search(pattern, response_text, re.I) for pattern in patterns)
@@ -198,29 +207,22 @@ async def analyze(
                     display_patterns = [p if p != r"\d+" else "number" for p in patterns]
                     suggestions.append(f"Try using words like: {', '.join(display_patterns)}")
 
-        # For non-special questions, use model-based relevance and confidence check.
         if not (is_name_question or is_age_question):
-            # Use a higher threshold for the color question
             threshold = 0.9 if is_color_question else 0.7
             if mnli_probs.max().item() < threshold:
                 suggestions.append("Let's try that again. Can you explain differently?")
             if relevance != 'entailment':
                 suggestions.append(f"Let's try again. The question was: '{question}'")
 
-        # Emotion handling: offer calming suggestion if negative emotions are detected.
         if top_emotion in ['anger', 'fear']:
             suggestions.append("Let's try some calming exercises!")
 
-        # Determine if the answer is correct.
-        # We'll treat the answer as correct if there are no error suggestions.
-        # We'll ignore suggestions that are purely for calming.
         error_triggers = ["try", "repeat", "please", "use words like"]
         error_suggestions = [s for s in suggestions if "calming exercises" not in s.lower()]
         error_flag = any(any(trigger in s.lower() for trigger in error_triggers) for s in error_suggestions)
         if not error_flag:
             is_correct = True
 
-        # If no suggestions were added at all, add a success message.
         if not suggestions:
             suggestions.append("Awesome answer! Great job communicating!")
         
@@ -260,6 +262,23 @@ async def analyze(
         raise he
     except Exception as e:
         raise HTTPException(500, detail=str(e))
+
+def generate_declarative_premise(question: str) -> str:
+    patterns = {
+        r"what's? your name\?": "The speaker states their personal name directly",
+        r"are you a boy or girl\?": "The speaker explicitly states their gender as either male or female",
+        r"how old are you\?": "The speaker states their age using a number followed by 'years old'",
+        r"what's your favorite color\?": "The speaker names a specific color preference",
+        r"do you like reading\?": "The speaker explicitly confirms or denies enjoying reading",
+        r"how are you feeling\?": "The speaker describes their current emotional state"
+    }
+    
+    question_lower = question.lower()
+    for pattern, template in patterns.items():
+        if re.match(pattern, question_lower):
+            return template
+    
+    return f"The statement '{question.replace('?', '').capitalize()}' is being explicitly discussed"
 
 async def process_audio(audio: UploadFile):
     try:

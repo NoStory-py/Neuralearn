@@ -39,7 +39,7 @@ function ChooseGames() {
                             <div className="card-content">
                                 <h3 className="text-center">Wordle Game</h3>
                                 <p className="text-center">Guess the 5-letter word in 6 attempts or less.</p>
-                                <a href="/Games/wordle/wordleHome.html" className="btn btn-primary btn-block">Play Now!</a>
+                                <Link className="btn btn-primary btn-block" to="/games/wordle">Play Now!</Link>
                             </div>
                         </div>
                     </div>

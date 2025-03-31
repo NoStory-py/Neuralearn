@@ -1,39 +1,41 @@
 .body-maths {
-  background: linear-gradient(to bottom right, #ffefba, #ffffff);
+  background: linear-gradient(to bottom right, #f5f7fa, #c3cfe2);
   font-family: 'Arial', sans-serif;
 }
 
 .lesson-content {
   padding: 1.5rem;
   border-radius: 15px;
-  background-color: rgba(255, 255, 255, 0.9);
+  background-color: rgba(255, 255, 255, 0.95);
   margin: 1rem auto;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
   max-width: 700px;
 }
 
 .body-maths h2,
 .body-maths h3 {
-  color: #007bff;
+  color: #003366;
   text-align: center;
-  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.1);
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.15);
+  font-weight: 700;
 }
 
 .body-maths p {
-  color: #555; 
+  color: #444;
   font-size: 1.1rem;
+  font-weight: 500;
 }
 
 .response-message-maths {
-  margin-top: 10px;
+  font-size: 2rem;
   font-weight: bold;
   text-align: center;
+  color: #28a745;
 }
 
 .navigation-buttons-maths {
   display: flex;
   justify-content: center;
-  margin-top: 20px;
 }
 
 .body-maths .btn {
@@ -41,4 +43,56 @@
   margin: 5px;
   border-radius: 25px;
   font-size: 1rem;
+  font-weight: 600;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  transition: background-color 0.3s ease;
 }
+
+.body-maths .btn:hover {
+  background-color: #0056b3;
+}
+
+.input-group-maths {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.input-group-maths input {
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  font-size: 1rem;
+  font-weight: 500;
+  color: #333;
+}
+
+.input-group-maths .btn {
+  padding: 10px 20px;
+  font-size: 1rem;
+  font-weight: 600;
+  border-radius: 5px;
+  background-color: #28a745;
+  color: white;
+  border: none;
+  transition: background-color 0.3s ease;
+}
+
+.input-group-maths .btn:hover {
+  background-color: #218838;
+}
+
+.body-maths img {
+  display: block;
+  margin: auto;
+  margin-bottom: 2rem;
+  border: 3px solid black;
+  border-radius: 10px;
+  width: 500px;
+  height: 360px;
+}
+

@@ -9,7 +9,7 @@ const VoiceRecognitionLanding = () => {
       title: 'Speech Accuracy',
       desc: 'Practice pronunciation and speech clarity',
       color: '#8EC5FC',
-      route: '/learning-modules/VoiceRecognition/speech'
+      route: '/learning-modules/Voice/SpeechTraining'
     },
     {
       id: 'conversation',

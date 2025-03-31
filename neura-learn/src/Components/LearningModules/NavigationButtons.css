@@ -1,0 +1,38 @@
+.modules-navigation {
+    margin-top: 20px;
+}
+
+.test-nav-button {
+    font-size: 1.4rem; 
+    margin: 5px;
+    padding: 10px 20px;
+    background: linear-gradient(135deg, #ff9a9e 0%, #fad0c4 50%, #a8edea 100%);
+    color: #003a2f;
+    font-weight: bold;
+    cursor: pointer;
+    border-radius: 8px;
+    transition: background-color 0.3s, transform 0.2s;
+}
+
+.test-nav-button:hover {
+    background: linear-gradient(135deg, #ff9a9e 0%, #fad0c4 75%, #a8edea 100%);
+    transform: translateY(-2px);
+}
+
+.test-nav-action-button {
+    font-size: 1.4rem; 
+    margin: 5px;
+    padding: 10px 20px;
+    background: linear-gradient(135deg, #b3e5fc 0%, #81d4fa 50%, #4fc3f7 100%);
+    color: #001f3a;
+    font-weight: bold;
+    cursor: pointer;
+    border: 2px solid blueviolet;
+    border-radius: 32px;
+    transition: background-color 0.3s, transform 0.2s;
+}
+
+.test-nav-action-button:hover {
+    background: linear-gradient(135deg, #81d4fa 0%, #4fc3f7 50%, #039be5 100%);
+    transform: translateY(-2px);
+}

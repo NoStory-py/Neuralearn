@@ -1,7 +1,7 @@
 import React from 'react'
 import "./ModulesAlphabets.css"
 import VideoSection from './VideoSection.jsx'
-import Navigation from './Navigation.jsx'
+import NavigationButtons from './NavigationButtons.jsx'
 
 const ModulesAlphabets = () => {
     return (
@@ -38,9 +38,8 @@ const ModulesAlphabets = () => {
                 <AlphabetsCard letter="Z" word="Zebra" />
             </div>
 
-            <Navigation
-            name = "Start Test"
-            link = "/learning-modules/alphabets/test"
+            <NavigationButtons
+            buttons={[{name:"Start Test", link : "/learning-modules/alphabets/test"}]}
             />
 
             <VideoSection

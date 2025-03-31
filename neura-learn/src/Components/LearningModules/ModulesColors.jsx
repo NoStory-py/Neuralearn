@@ -1,7 +1,7 @@
 import { useState } from "react";
 import './ModulesColors.css'
 import VideoSection from './VideoSection'
-import Navigation from './Navigation';
+import NavigationButtons from "./NavigationButtons";
 
 function ModulesColors() {
   const [selectedColor, setSelectedColor] = useState(null);
@@ -54,9 +54,8 @@ function ModulesColors() {
         </div>
       </div>
 
-      <Navigation
-      name="Start Test"
-      link = "/learning-modules/colors/test"
+      <NavigationButtons
+      buttons = {[{name: "Start Test", link: "/learning-modules/colors/test"}]}
       />
 
       <VideoSection
