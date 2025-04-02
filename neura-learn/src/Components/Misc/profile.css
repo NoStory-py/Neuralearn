@@ -1,0 +1,225 @@
+/* Container Styles */
+.profile-container {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
+  }
+  
+  /* Card Styles */
+  .profile-card {
+    background: white;
+    padding: 40px;
+    border-radius: 30px;
+    box-shadow: 0 10px 30px rgba(78,205,196,0.2);
+    position: relative;
+    transform: rotate(1deg);
+    max-width: 600px;
+    width: 100%;
+  }
+  
+  .profile-card::after {
+    content: '';
+    position: absolute;
+    top: -10px;
+    left: -10px;
+    right: -10px;
+    bottom: -10px;
+    background: linear-gradient(45deg, #4ecdc4, #ff6b6b);
+    z-index: -1;
+    border-radius: 40px;
+    opacity: 0.3;
+  }
+  
+  /* Typography */
+  .profile-title {
+    color: #4ecdc4;
+    font-family: 'Bubblegum Sans', cursive;
+    text-align: center;
+    margin-bottom: 25px;
+    font-size: 2rem;
+  }
+  
+  .section-title {
+    color: #ff6b6b;
+    font-family: 'Bubblegum Sans', cursive;
+    text-align: center;
+    margin: 25px 0;
+    font-size: 1.5rem;
+  }
+  
+  .profile-label {
+    color: #4d4d4d;
+    font-family: 'Comic Neue', cursive;
+    display: block;
+    margin-bottom: 15px;
+    font-size: 1.2rem;
+  }
+  
+  /* Input Fields */
+  .profile-input,
+  .color-text-input,
+  .emoji-input {
+    font-family: 'Comic Neue', cursive;
+    font-size: 18px;
+    border-radius: 15px;
+    padding: 12px;
+    margin-top: 8px;
+    width: 100%;
+    border: 3px solid;
+  }
+  
+  .name-input { border-color: #ff6b6b; }
+  .email-input { border-color: #4ecdc4; }
+  
+  /* Grid Layouts */
+  .gender-age-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 20px 0;
+  }
+  
+  .favourites-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+  }
+  
+  /* Color Input Section */
+  .color-input-container {
+    display: flex;
+    gap: 15px;
+    align-items: center;
+    margin-top: 10px;
+  }
+  
+  .color-text-input {
+    flex: 1;
+    background-color: #fff3cd;
+  }
+  
+  .color-preview {
+    width: 50px;
+    height: 50px;
+    border-radius: 10px;
+    border: 3px solid white;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+  }
+  
+  /* Favorite Items */
+  .favorite-item {
+    padding: 15px;
+    border-radius: 15px;
+    border: 3px solid;
+    text-align: center;
+    margin: 10px 0;
+  }
+  
+  .color-item { border-color: #ff6b6b; }
+  .food-item { border-color: #4ecdc4; }
+  .animal-item { border-color: #ffd700; }
+  .cartoon-item { border-color: #a8edea; }
+  
+  /* Save Button */
+  .save-button {
+    background: linear-gradient(45deg, #4ecdc4, #88dac8);
+    border: none;
+    border-radius: 25px;
+    padding: 15px 30px;
+    font-size: 20px;
+    font-family: 'Bubblegum Sans', cursive;
+    color: white;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: block;
+    margin: 20px auto 0;
+  }
+  
+  .save-button:hover {
+    transform: scale(1.05);
+    box-shadow: 0 4px 15px rgba(78,205,196,0.4);
+  }
+  
+  /* Animations & Decorations */
+  @keyframes bounce {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-20px); }
+  }
+  
+  .character-container {
+    position: relative;
+    text-align: center;
+    margin-bottom: 30px;
+  }
+  
+  .welcome-character {
+    width: 150px;
+    height: auto;
+    animation: bounce 2s infinite;
+  }
+  
+  .speech-bubble {
+    position: absolute;
+    top: -40px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: white;
+    padding: 10px 20px;
+    border-radius: 20px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    font-family: 'Comic Neue', cursive;
+    color: #ff6b6b;
+    font-size: 1.1rem;
+  }
+  
+  .decorations {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    pointer-events: none;
+  }
+  
+  .star {
+    position: absolute;
+    font-size: 24px;
+    animation: float 3s infinite;
+  }
+  
+  .star-1 { top: 10%; left: 5%; }
+  .star-2 { top: 80%; right: 10%; }
+  
+  .cloud {
+    position: absolute;
+    font-size: 40px;
+    opacity: 0.3;
+    animation: drift 10s infinite linear;
+  }
+  
+  .cloud-1 { top: 20%; right: -50px; }
+  
+  .save-message {
+    text-align: center;
+    padding: 10px;
+    margin: 15px 0;
+    border-radius: 20px;
+    background: #fff3cd;
+    color: #4ecdc4;
+    font-family: 'Bubblegum Sans', cursive;
+    animation: bounce 1s;
+    font-size: 1.1rem;
+  }
+  
+  @keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-10px); }
+  }
+  
+  @keyframes drift {
+    from { transform: translateX(-100%); }
+    to { transform: translateX(100%); }
+  }
