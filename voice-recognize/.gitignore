@@ -3,3 +3,4 @@
 /logs
 /mnli_model
 __pycache__/
+/fact_model

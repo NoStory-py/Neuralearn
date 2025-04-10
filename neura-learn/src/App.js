@@ -3,6 +3,7 @@ import ProtectedRoute from "./Components/ProtectedRoute";
 import Navbar from "./Components/Navbar";
 import Footer from "./Components/Footer";
 import HomePage from "./Components/Home/HomePage";
+import Profile from "./Components/Misc/profile";
 import Contact from "./Components/Misc/Contact";
 import About from "./Components/Misc/About";
 import ScrollToTop from "./Components/ScrollToTop";
@@ -47,6 +48,7 @@ function App() {
         <Route element={<ProtectedRoute />}>
           <Route path="/home" element={<HomePage />} />
           <Route path="/contact" element={<Contact />} />
+          <Route path="/Profile" element={<Profile />} />
           <Route path="/about" element={<About />} />
           <Route path="/printables" element={<PrintableActivities />} />
 

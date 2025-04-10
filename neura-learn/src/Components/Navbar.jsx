@@ -38,6 +38,12 @@ function Navbar() {
               </Link>
             </li>
 
+            <li className="nav-item">
+              <Link className="nav-link kids-link" to="/Profile">
+              👤 Profile
+              </Link>
+            </li>
+
             <li className="nav-item dropdown">
               <Link className="nav-link dropdown-toggle kids-link" 
                     to="#" 
@@ -71,6 +77,7 @@ function Navbar() {
                 📮 Contact
               </Link>
             </li>
+            
           </ul>
 
           <ul className="navbar-nav mb-2 mb-lg-0">

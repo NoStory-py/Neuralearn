@@ -10,7 +10,7 @@ const ConversationTraining = () => {
   const [error, setError] = useState(null);
   const [recording, setRecording] = useState(false);
   const [questionSets, setQuestionSets] = useState({});
-  const [selectedSet, setSelectedSet] = useState("basic");
+  const [selectedSet] = useState("main");
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [score, setScore] = useState(0);
   const [showSuccess, setShowSuccess] = useState(false);
@@ -21,16 +21,15 @@ const ConversationTraining = () => {
   const utteranceRef = useRef(null);
   const selectedVoice = useRef(null);
 
-  // Voice selection useEffect
   useEffect(() => {
     const loadVoices = () => {
       const voices = speechSynth.current.getVoices();
       const targetVoice = voices.find((voice) => {
-        const isFemale = 
+        const isFemale =
           voice.name.includes("Female") ||
           voice.name.includes("Zira") ||
           voice.name.includes("Child");
-        const isChildlike = 
+        const isChildlike =
           voice.name.includes("Child") || voice.lang === "en-US";
         return isFemale && isChildlike;
       });
@@ -45,20 +44,18 @@ const ConversationTraining = () => {
     };
   }, []);
 
-  // Text-to-speech functions
   const speakText = (text) => {
     if (!text) return;
     if (speechSynth.current.speaking) {
       speechSynth.current.cancel();
     }
-    
+
     utteranceRef.current = new SpeechSynthesisUtterance(text);
-    
+
     if (selectedVoice.current) {
       utteranceRef.current.voice = selectedVoice.current;
     }
 
-    // Childlike voice adjustments
     utteranceRef.current.pitch = 1.8;
     utteranceRef.current.rate = 0.9;
     utteranceRef.current.volume = 1;
@@ -72,48 +69,43 @@ const ConversationTraining = () => {
     }
   };
 
-  // Session ID and initial question setup
   useEffect(() => {
-    const newSessionId = 
+    const newSessionId =
       Date.now().toString(36) + Math.random().toString(36).substr(2);
     setSessionId(newSessionId);
   }, []);
 
-  // Question loading and auto-speak
   useEffect(() => {
-    axios.get(`http://localhost:9000/questions/${selectedSet}`)
+    axios
+      .get(`http://localhost:9000/questions/${selectedSet}`)
       .then((res) => {
         setQuestionSets((s) => ({ ...s, [selectedSet]: res.data }));
         if (res.data.length > 0) {
-          // Speak first question after short delay to allow voice load
           setTimeout(() => speakText(res.data[0]), 500);
         }
       })
       .catch((err) => console.error("Error loading questions:", err));
   }, [selectedSet]);
 
-  // Speak current question when changed
   useEffect(() => {
     if (questionSets[selectedSet]?.[currentQuestionIndex]) {
       speakText(questionSets[selectedSet][currentQuestionIndex]);
     }
   }, [currentQuestionIndex, questionSets, selectedSet]);
 
-  // Cleanup speech on page unload
   useEffect(() => {
     const handleBeforeUnload = () => {
       if (speechSynth.current.speaking) {
         speechSynth.current.cancel();
       }
     };
-    
+
     window.addEventListener("beforeunload", handleBeforeUnload);
     return () => {
       window.removeEventListener("beforeunload", handleBeforeUnload);
     };
   }, []);
 
-  // Recording handlers
   const startRecording = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -138,7 +130,6 @@ const ConversationTraining = () => {
     setScore((s) => Math.max(0, s - 1));
   };
 
-  // Form submission
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError(null);
@@ -174,11 +165,22 @@ const ConversationTraining = () => {
       );
       setResult(response.data);
 
-      const isSuccess =
-        !response.data.suggestions.some((s) => s.includes("echolalia")) &&
-        response.data.confidence >= 0.9;
-
-      if (isSuccess) {
+      // If it's an emotion response, speak it and move to the next question after 2 seconds
+      if (response.data.emotion_response) {
+        speakText(response.data.emotion_response);
+        setTimeout(() => {
+          setCurrentQuestionIndex((prev) => {
+            if (prev + 1 >= questionSets[selectedSet]?.length) {
+              setSessionCompleted(true);
+              return prev;
+            }
+            return prev + 1;
+          });
+          setTextResponse("");
+          audioChunksRef.current = [];
+          setResult(null); // clear the response box after 2 seconds
+        }, 2000);
+      } else if (response.data.is_correct) {
         speakText("Awesome answer! Let's move to the next question.");
         utteranceRef.current.onend = () => {
           setScore((s) => s + 10);
@@ -232,9 +234,7 @@ const ConversationTraining = () => {
               </h2>
               <span className="question-counter">
                 {questionSets[selectedSet]?.length > currentQuestionIndex
-                  ? `Question ${currentQuestionIndex + 1} of ${
-                      questionSets[selectedSet]?.length
-                    }`
+                  ? `Question ${currentQuestionIndex + 1} of ${questionSets[selectedSet]?.length}`
                   : "Completed!"}
               </span>
             </div>
@@ -290,19 +290,23 @@ const ConversationTraining = () => {
               </button>
             </form>
 
-            {result && (
+            {result?.emotion_response ? (
+              <div className="feedback-box positive">
+                <div className="positive-message">
+                  {result.emotion_response}
+                </div>
+              </div>
+            ) : result && (
               <div
                 className={`feedback-box ${
-                  result.confidence >= 0.9 &&
-                  !result.suggestions.some((s) => s.includes("echolalia"))
-                    ? "positive"
-                    : "improvement-needed"
+                  result.is_correct ? "positive" : "improvement-needed"
                 }`}
               >
-                {result.confidence >= 0.9 &&
-                !result.suggestions.some((s) => s.includes("echolalia")) ? (
+                {result.is_correct ? (
                   <>
-                    <div className="positive-message">🌟 Awesome Answer!</div>
+                    <div className="positive-message">
+                      🌟 Awesome Answer!
+                    </div>
                     <div className="encouragement">
                       Next question loading...
                     </div>
@@ -319,24 +323,9 @@ const ConversationTraining = () => {
                         onMouseEnter={() => handleHoverSpeak(suggestion)}
                         onMouseLeave={() => speechSynth.current.cancel()}
                       >
-                        {suggestion.includes("echolalia") ? "🔄 " : "💡 "}
-                        {suggestion.replace(
-                          "Try to stay on topic",
-                          `Focus on: ${currentQuestion}`
-                        )}
+                        {suggestion}
                       </div>
                     ))}
-                    <div
-                      className="question-reminder"
-                      onMouseEnter={() =>
-                        handleHoverSpeak(
-                          `Remember the question was: ${currentQuestion}`
-                        )
-                      }
-                      onMouseLeave={() => speechSynth.current.cancel()}
-                    >
-                      Remember the question was: {currentQuestion}
-                    </div>
                   </>
                 )}
               </div>

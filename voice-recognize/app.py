@@ -1,3 +1,6 @@
+# Ensure tiktoken is installed if needed:
+# pip install tiktoken
+
 import os
 import re
 import tempfile
@@ -13,7 +16,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from pydub import AudioSegment
 from speech_recognition import Recognizer, AudioFile, UnknownValueError
-from transformers import AutoModelForSequenceClassification, AutoTokenizer
+from transformers import pipeline, AutoTokenizer, AutoModelForSequenceClassification
 from pymongo import MongoClient
 from collections import defaultdict, Counter
 
@@ -29,6 +32,17 @@ session_last_used = {}
 SESSION_TTL = 7200  # 2 hours expiration
 session_word_history = defaultdict(list)
 
+# Echolalia constants
+ECHOLALIA_THRESHOLD = 0.7
+QUESTION_SUGGESTIONS = {
+    "What's your name?": "No repeating! Try: My name is Alex",
+    "Are you a boy or girl?": "No repeating! Try: I am a boy",
+    "How old are you?": "No repeating! Try: I am 8 years old",
+    "What's your favorite color?": "No repeating! Try: My favorite is blue",
+    "What do you like to eat?": "No repeating! Try: I like pizza",
+    "What's your favorite animal?": "No repeating! Try: I love dolphins"
+}
+
 def cleanup_sessions():
     now = time.time()
     stale_sessions = [sid for sid, last_used in session_last_used.items() if now - last_used > SESSION_TTL]
@@ -40,6 +54,7 @@ def cleanup_sessions():
 
 cleanup_sessions()
 
+# Configure ffmpeg path (adjust if necessary)
 AudioSegment.ffmpeg = r"C:\ProgramData\chocolatey\bin\ffmpeg.exe"
 
 app = FastAPI()
@@ -52,51 +67,111 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-MODEL_PATHS = {
-    'emotion': './emotion_model',
-    'mnli': './mnli_model'
-}
+# Initialize models using pipelines
+
+# MNLI classifier with enhanced validation
+mnli_classifier = pipeline(
+    "zero-shot-classification",
+    model="MoritzLaurer/DeBERTa-v3-large-mnli-fever-anli-ling-wanli"
+)
+
+# Load emotion model
+emotion_tokenizer = AutoTokenizer.from_pretrained("mrm8488/deberta-v3-base-goemotions", use_fast=False)
+emotion_model = AutoModelForSequenceClassification.from_pretrained("mrm8488/deberta-v3-base-goemotions")
+emotion_classifier = pipeline("text-classification", model=emotion_model, tokenizer=emotion_tokenizer, top_k=None)
 
 QUESTION_SETS = {
-    "basic": [
-        {"question": "What's your name?", "premise": "The speaker states their personal name directly"},
-        {"question": "Are you a boy or girl?", "premise": "The speaker explicitly states their gender as either male or female"},
-        {"question": "How old are you?", "premise": "The speaker states their age using a number followed by 'years old'"},
-        {"question": "What's your favorite color?", "premise": "The speaker names a specific color preference"},
-        {"question": "What do you like to eat?", "premise": "The speaker has food preferences"},
-        {"question": "What's your favorite animal?", "premise": "The speaker has an animal preference"}
-    ],
-    "school": [
-        {"question": "What's your favorite subject?", "premise": "The speaker has academic preferences"},
-        {"question": "Do you like reading?", "premise": "The speaker explicitly confirms or denies enjoying reading"},
-        {"question": "What do you play at recess?", "premise": "The speaker's recreational activities"}
-    ],
-    "emotions": [
-        {"question": "How are you feeling today?", "premise": "The speaker describes their current emotional state"},
-        {"question": "What makes you happy?", "premise": "The speaker's sources of joy"},
-        {"question": "What helps you calm down?", "premise": "The speaker's coping mechanisms"}
+    "main": [
+        {"question": "What's your name?"},
+        {"question": "Are you a boy or girl?"},
+        {"question": "How old are you?"},
+        {"question": "What's your favorite color?"},
+        {"question": "What do you like to eat?"},
+        {"question": "What's your favorite animal?"},
+        {"question": "How are you feeling today?", "type": "emotion"},
+        {"question": "What makes you excited?", "type": "emotion"},
+        {"question": "What helps you feel calm?", "type": "emotion"},
+        {"question": "What makes you feel proud?", "type": "emotion"}
     ]
 }
 
-SPEECH_WORDS = ["apple", "ball", "cat", "dog", "egg", "fish", "goat", "hat", "ice", "juice"]
-ECHOLALIA_PHRASE = "please repeat what did i say just now"
-
-KEYWORD_CHECKS = {
-    "Are you a boy or girl?": ["boy", "girl", "male", "female"],
-    "How old are you?": [r"\d+", "year"],
-    "Do you like reading?": ["yes", "no", "love", "like", "don't"],
-    "What's your favorite color?": ["red", "blue", "green", "yellow", "purple", "orange", "pink", "brown", "black", "white"]
+EMOTION_RESPONSES = {
+    "admiration": "That's really admirable! 🌟",
+    "amusement": "Glad you're having fun! 😄",
+    "anger": "Let's take deep breaths together... 🌬️",
+    "annoyance": "Maybe we can find a better solution 💡",
+    "approval": "That's great to hear! 👍",
+    "caring": "That's very thoughtful of you 💖",
+    "confusion": "Let's try to work through this together 🤔",
+    "curiosity": "Curiosity is a great learning tool! 🔍",
+    "desire": "That sounds exciting to pursue! 🎯",
+    "disappointment": "I'm here to help things improve 🌈",
+    "disapproval": "Let's talk about how to make it better 📢",
+    "disgust": "That sounds unpleasant 😣",
+    "embarrassment": "Everyone has moments like that 🤗",
+    "excitement": "Wow, that's so exciting! 🎉",
+    "fear": "You're safe here with me 🛡️",
+    "gratitude": "Thank you for sharing that! 🙏",
+    "grief": "I'm here to listen anytime 🕊️",
+    "joy": "Your happiness is contagious! 😊",
+    "love": "That's so full of warmth! ❤️",
+    "nervousness": "Take your time, I'm here 🤝",
+    "optimism": "That positive outlook is great! 🌈",
+    "pride": "You should be proud! 🏆",
+    "realization": "Ah-ha moments are the best! 💡",
+    "relief": "Glad things worked out! 😌",
+    "remorse": "It's okay to learn from experiences 📖",
+    "sadness": "I'm here to help you feel better 🤗",
+    "surprise": "Oh! That's interesting! 😯",
+    "neutral": "Thanks for sharing how you feel! 💬"
 }
 
-emotion_model = AutoModelForSequenceClassification.from_pretrained(MODEL_PATHS['emotion'])
-emotion_tokenizer = AutoTokenizer.from_pretrained(MODEL_PATHS['emotion'])
-mnli_model = AutoModelForSequenceClassification.from_pretrained(MODEL_PATHS['mnli'])
-mnli_tokenizer = AutoTokenizer.from_pretrained(MODEL_PATHS['mnli'])
+EMOTION_LABELS = [
+    "admiration", "amusement", "anger", "annoyance", "approval", "caring", "confusion",
+    "curiosity", "desire", "disappointment", "disapproval", "disgust", "embarrassment",
+    "excitement", "fear", "gratitude", "grief", "joy", "love", "nervousness", "optimism",
+    "pride", "realization", "relief", "remorse", "sadness", "surprise", "neutral"
+]
 
 MAX_AUDIO_DURATION = 30
 MIN_AUDIO_LENGTH = 0.1
-ECHOLALIA_THRESHOLD = 0.85
 recognizer = Recognizer()
+
+# Enhanced validation configuration
+VALIDATION_CONFIG = {
+    "What's your name?": {
+        "valid": ["provides a personal name", "states their actual name"],
+        "invalid": ["avoids name disclosure", "mentions unrelated subject"]
+    },
+    "What's your favorite color?": {
+        "valid": ["names a recognized color", "states a valid color name"],
+        "invalid": ["mentions food items", "refers to objects", "uses non-color words"]
+    },
+    "What do you like to eat?": {
+        "valid": ["mentions edible food", "describes consumable items"],
+        "invalid": ["talks about inedible objects", "mentions clothing", "refers to non-food items"]
+    },
+    "What's your favorite animal?": {
+        "valid": ["identifies an animal", "describes living creature"],
+        "invalid": ["mentions objects", "avoids animal mention"]
+    },
+    "How old are you?": {
+        "valid": ["states numerical age", "provides age information"],
+        "invalid": ["avoids age disclosure", "mentions unrelated numbers"]
+    }
+}
+
+def detect_echolalia(response: str, question: str) -> bool:
+    normalized_response = response.lower().strip()
+    normalized_question = question.lower().strip()
+    
+    # Check question similarity
+    if similarity_ratio(normalized_response, normalized_question) > ECHOLALIA_THRESHOLD:
+        return True
+        
+    # Check word repetition
+    words = normalized_response.split()
+    return any(count > 2 for count in Counter(words).values())
 
 @app.get("/questions/{set_id}")
 async def get_question_set(set_id: str):
@@ -104,7 +179,7 @@ async def get_question_set(set_id: str):
 
 @app.get("/api/speech-training/words")
 async def get_speech_words():
-    return JSONResponse({"words": SPEECH_WORDS})
+    return JSONResponse({"words": ["apple", "ball", "cat", "dog", "egg", "fish", "goat", "hat", "ice", "juice"]})
 
 @app.post("/analyze")
 async def analyze(
@@ -117,6 +192,8 @@ async def analyze(
     suggestions = []
     response_text = ""
     is_correct = False
+    emotion_response = None
+    mnli_label = ""
     
     try:
         session_last_used[session_id] = time.time()
@@ -132,153 +209,123 @@ async def analyze(
         if not response_text:
             raise HTTPException(400, "No response provided")
 
-        if mode == "speech_training":
-            normalized_response = response_text.lower().strip()
-            normalized_question = question.lower().strip()
-            
-            is_correct = normalized_response == normalized_question
-            confidence = similarity_ratio(normalized_response, normalized_question)
-            is_echolalia = similarity_ratio(normalized_response, ECHOLALIA_PHRASE) > 0.85
-
-            response_data = {
-                "is_correct": is_correct,
-                "confidence": float(confidence),
-                "is_echolalia": is_echolalia,
-                "expected_word": question,
-                "response": response_text,
-                "timestamp": datetime.now().isoformat()
-            }
-
-            speech_results_collection.insert_one({
-                "session_id": session_id,
-                **response_data
-            })
-
-            return JSONResponse(response_data)
-
-        premise = next(
-            (q["premise"] for q_set in QUESTION_SETS.values() 
-             for q in q_set if q["question"] == question),
-            generate_declarative_premise(question)
-        )
-
-        is_name_question = question.lower() == "what's your name?"
-        is_age_question = question.lower() == "how old are you?"
-        is_color_question = question.lower() == "what's your favorite color?"
-        
-        if is_name_question:
-            premise = "The speaker states their personal name directly"
-            mnli_probs = torch.tensor([[2.0, -1.0, -1.0]])
-            relevance = 'entailment'
-        elif is_age_question and re.search(r"\d+", response_text):
-            premise = "The speaker states their age using a number followed by 'years old'"
-            mnli_probs = torch.tensor([[2.0, -1.0, -1.0]])
-            relevance = 'entailment'
+        # Echolalia detection first
+        is_echolalia = detect_echolalia(response_text, question)
+        if is_echolalia:
+            is_correct = False
+            suggestions.append(QUESTION_SUGGESTIONS.get(
+                question, 
+                "No repeating! Try to answer directly"
+            ))
+            mnli_label = "echolalia"
         else:
-            mnli_inputs = mnli_tokenizer(premise, response_text, return_tensors="pt", truncation=True)
-            with torch.no_grad():
-                mnli_outputs = mnli_model(**mnli_inputs)
-            mnli_probs = torch.nn.functional.softmax(mnli_outputs.logits, dim=-1)
-            relevance = mnli_model.config.id2label[mnli_probs.argmax().item()]
+            if mode == "speech_training":
+                normalized_response = response_text.lower().strip()
+                normalized_question = question.lower().strip()
+                
+                is_correct = normalized_response == normalized_question
+                confidence = similarity_ratio(normalized_response, normalized_question)
 
-        emotion_inputs = emotion_tokenizer(response_text, return_tensors="pt", truncation=True)
-        emotion_outputs = emotion_model(**emotion_inputs)
-        emotion_probs = torch.nn.functional.softmax(emotion_outputs.logits, dim=-1)
-        top_emotion = emotion_model.config.id2label[emotion_probs.argmax().item()]
+                response_data = {
+                    "is_correct": is_correct,
+                    "confidence": float(confidence),
+                    "is_echolalia": is_echolalia,
+                    "expected_word": question,
+                    "response": response_text,
+                    "timestamp": datetime.now().isoformat()
+                }
 
-        phrase_counter = session_phrase_counters[session_id]
-        normalized_response = response_text.lower().strip()
-        normalized_question = question.lower().strip()
+                speech_results_collection.insert_one({
+                    "session_id": session_id,
+                    **response_data
+                })
 
-        if similarity_ratio(normalized_response, normalized_question) > ECHOLALIA_THRESHOLD:
-            suggestions.append("Great repeating! Now try to answer in your own words")
-        elif phrase_counter[normalized_response] >= 1:
-            suggestions.append(f"Repeated phrase detected: '{normalized_response}'. Try to answer differently.")
+                return JSONResponse(response_data)
 
-        phrase_counter[normalized_response] += 1
+            current_question = next(
+                (q for q_set in QUESTION_SETS.values() 
+                 for q in q_set if q["question"] == question),
+                {"type": "general"}
+            )
 
-        if question in KEYWORD_CHECKS:
-            patterns = KEYWORD_CHECKS[question]
-            match_found = any(re.search(pattern, response_text, re.I) for pattern in patterns)
-            if not match_found:
-                if is_color_question:
-                    suggestions.append("That doesn't seem like a color. Please answer with a color name (e.g., red, blue, green).")
+            if current_question.get("type") == "emotion":
+                results = emotion_classifier(response_text)[0]
+                filtered = [res for res in results if res["score"] > 0.1]
+                if filtered:
+                    top_emotion_idx = int(filtered[0]["label"].split("_")[-1])
+                    top_emotion = EMOTION_LABELS[top_emotion_idx]
+                    confidence = filtered[0]["score"]
                 else:
-                    display_patterns = [p if p != r"\d+" else "number" for p in patterns]
-                    suggestions.append(f"Try using words like: {', '.join(display_patterns)}")
+                    top_emotion = "neutral"
+                    confidence = 1.0
 
-        if not (is_name_question or is_age_question):
-            threshold = 0.9 if is_color_question else 0.7
-            if mnli_probs.max().item() < threshold:
-                suggestions.append("Let's try that again. Can you explain differently?")
-            if relevance != 'entailment':
-                suggestions.append(f"Let's try again. The question was: '{question}'")
+                emotion_response = EMOTION_RESPONSES.get(top_emotion.lower(), "Thanks for sharing how you feel!")
+                
+                return JSONResponse({
+                    "emotion_response": emotion_response,
+                    "emotion": top_emotion,
+                    "confidence": round(float(confidence), 4),
+                    "all_emotions": {EMOTION_LABELS[int(res["label"].split("_")[-1])]: res["score"] 
+                                    for res in filtered}
+                })
 
-        if top_emotion in ['anger', 'fear']:
-            suggestions.append("Let's try some calming exercises!")
+            # Enhanced model-driven validation
+            normalized_response = response_text.lower()
+            if question.lower() == "are you a boy or girl?":
+                is_correct = any(word in normalized_response for word in ["boy", "girl"])
+            elif question in VALIDATION_CONFIG:
+                config = VALIDATION_CONFIG[question]
+                candidate_labels = config["valid"] + config["invalid"]
+                
+                # Question-specific hypothesis templates
+                hypothesis_template = (
+                    "The response specifically names a color: {}." 
+                    if question == "What's your favorite color?" else
+                    "The response specifically mentions edible food: {}." 
+                    if question == "What do you like to eat?" else
+                    "The response explicitly states that {}."
+                )
+                
+                result = mnli_classifier(
+                    sequences=response_text,
+                    candidate_labels=candidate_labels,
+                    hypothesis_template=hypothesis_template
+                )
+                
+                # Pure model decision
+                top_label = result['labels'][0]
+                is_correct = top_label in config["valid"]
+                mnli_label = "entailment" if is_correct else "contradiction"
+            else:
+                is_correct = False
+                mnli_label = "contradiction"
 
-        error_triggers = ["try", "repeat", "please", "use words like"]
-        error_suggestions = [s for s in suggestions if "calming exercises" not in s.lower()]
-        error_flag = any(any(trigger in s.lower() for trigger in error_triggers) for s in error_suggestions)
-        if not error_flag:
-            is_correct = True
+            if not is_correct and not is_echolalia:
+                suggestions.append("Let's try to form a complete answer that directly addresses the question")
 
-        if not suggestions:
-            suggestions.append("Awesome answer! Great job communicating!")
-        
         conversations_collection.insert_one({
             "timestamp": datetime.now(),
             "session_id": session_id,
             "question": question,
             "response": response_text,
-            "premise": premise,
-            "relevance": relevance,
-            "confidence": float(mnli_probs.max().item()),
-            "emotion": {
-                "label": top_emotion,
-                "confidence": float(emotion_probs[0][emotion_probs.argmax()].item())
-            },
+            "mnli_label": mnli_label,
             "suggestions": suggestions,
-            "repetition_count": phrase_counter[normalized_response]
+            "is_correct": is_correct
         })
 
         return JSONResponse({
             "question": question,
             "response": response_text,
-            "premise": premise,
-            "relevance": relevance,
-            "confidence": round(mnli_probs.max().item(), 4),
-            "emotion": {
-                "label": top_emotion,
-                "confidence": round(emotion_probs[0][emotion_probs.argmax()].item(), 4)
-            },
             "suggestions": suggestions,
-            "repetition_count": phrase_counter[normalized_response],
-            "timestamp": datetime.now().isoformat(),
-            "is_correct": is_correct
+            "mnli_label": mnli_label,
+            "is_correct": is_correct,
+            "emotion_response": emotion_response
         })
 
     except HTTPException as he:
         raise he
     except Exception as e:
         raise HTTPException(500, detail=str(e))
-
-def generate_declarative_premise(question: str) -> str:
-    patterns = {
-        r"what's? your name\?": "The speaker states their personal name directly",
-        r"are you a boy or girl\?": "The speaker explicitly states their gender as either male or female",
-        r"how old are you\?": "The speaker states their age using a number followed by 'years old'",
-        r"what's your favorite color\?": "The speaker names a specific color preference",
-        r"do you like reading\?": "The speaker explicitly confirms or denies enjoying reading",
-        r"how are you feeling\?": "The speaker describes their current emotional state"
-    }
-    
-    question_lower = question.lower()
-    for pattern, template in patterns.items():
-        if re.match(pattern, question_lower):
-            return template
-    
-    return f"The statement '{question.replace('?', '').capitalize()}' is being explicitly discussed"
 
 async def process_audio(audio: UploadFile):
     try:
@@ -310,4 +357,5 @@ async def transcribe_audio(wav_path: str):
         raise HTTPException(500, detail=f"Transcription error: {str(e)}")
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000)
+    import uvicorn
+    uvicorn.run(app, host='0.0.0.0', port=9000)

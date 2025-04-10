@@ -26,11 +26,13 @@ print("Tokenizing data...")
 tokenized_train = dataset["train"].map(tokenize_function, batched=True, batch_size=1000)
 tokenized_val = dataset["validation_matched"].map(tokenize_function, batched=True, batch_size=1000)
 
-# Model configuration
+# Model configuration with explicit label mapping
 print("Initializing model...")
 model = AutoModelForSequenceClassification.from_pretrained(
     "bert-base-uncased",
-    num_labels=3
+    num_labels=3,
+    id2label={0: "entailment", 1: "neutral", 2: "contradiction"},  # Fix label order
+    label2id={"entailment": 0, "neutral": 1, "contradiction": 2}
 )
 
 # T4-optimized training arguments
@@ -39,11 +41,11 @@ training_args = TrainingArguments(
     evaluation_strategy="epoch",
     save_strategy="epoch",
     learning_rate=2e-5,
-    per_device_train_batch_size=16,  # Fits perfectly in T4's 16GB VRAM
+    per_device_train_batch_size=16,
     per_device_eval_batch_size=32,
     num_train_epochs=3,
     weight_decay=0.01,
-    fp16=True,  # Mixed precision for faster training
+    fp16=True,
     gradient_accumulation_steps=2,
     logging_steps=100,
     save_total_limit=1,
