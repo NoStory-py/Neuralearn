@@ -14,7 +14,7 @@ const TestColors = () => {
   return (
     <TestFormat
       link="/learning-modules/colors"
-      title="Color Quiz"
+      title="Colors"
       questions={questionsData}
       renderQuestion={(question) => (
         <>

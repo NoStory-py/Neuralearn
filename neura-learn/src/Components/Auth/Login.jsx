@@ -23,6 +23,7 @@ const Login = () => {
     e.preventDefault();
     try {
       const response = await api.post("/login", { email, password });
+      console.log("Login API Response:", response.data);
       
       // Changed this condition
       if (response.data.token) { // 👈 Check for token existence instead of "success"

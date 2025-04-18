@@ -1,32 +1,37 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import "./Login.css"; 
 import api from "./api";
 
 const Signup = () => {
-  const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
   const [agreeTerms, setAgreeTerms] = useState(false);
   const navigate = useNavigate();
-  const isAuthenticated = localStorage.getItem("token"); 
-
-  useEffect(() => {
-    if (isAuthenticated) {
-      navigate("/home"); 
-    }
-  }, [isAuthenticated, navigate]);
-  
+ 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    if (password !== confirmPassword) {
+      setError("Passwords do not match.");
+      return;
+    }
+
     try {
-      const response = await api.post("/signup", { username, email, password });
+      const response = await api.post("/signup", { email, password });
       console.log("Signup API Response:", response.data); // Add this
       
       if (response.status === 201) {
-        navigate("/login");
+        const loginResponse = await api.post("/login", { email, password });
+
+        if (loginResponse.data.token) {
+          console.log("Login API Response:", loginResponse.data);
+          localStorage.setItem("token", loginResponse.data.token);
+          localStorage.setItem("userId", loginResponse.data.userId);
+          navigate("/profile/update"); 
+        }
       }
     
     } catch (err) {
@@ -50,23 +55,6 @@ const Signup = () => {
         {error && <div className="error-message" style={{ background: "#fff3cd" }}>🐧 {error}</div>}
 
         <form onSubmit={handleSubmit}>
-          <div className="form-group">
-            <label style={{ color: "#4d4d4d", fontFamily: "'Comic Neue', cursive" }}>
-              🐻❄️ Your Fun Name
-              <input
-                type="text"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                required
-                style={{
-                  border: "3px solid #4ecdc4",
-                  borderRadius: "15px",
-                  padding: "12px",
-                  fontSize: "18px"
-                }}
-              />
-            </label>
-          </div>
 
           <div className="form-group">
             <label style={{ color: "#4d4d4d", fontFamily: "'Comic Neue', cursive" }}>

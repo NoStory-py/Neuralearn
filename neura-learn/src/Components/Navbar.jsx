@@ -3,7 +3,7 @@ import './Navbar.css';
 
 function Navbar() {
   const navigate = useNavigate();
-
+  const isAuthenticated = localStorage.getItem("token");
   const handleLogout = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('userId');
@@ -74,6 +74,7 @@ function Navbar() {
             
           </ul>
 
+          {isAuthenticated ? 
           <ul className="navbar-nav mb-2 mb-lg-0">
             <li className="nav-item">
               <Link className="nav-link kids-link" 
@@ -82,7 +83,7 @@ function Navbar() {
                 🚪 Logout
               </Link>
             </li>
-          </ul>
+          </ul> : null }
 
           <form className="d-flex ms-3 kids-search" role="search">
             <input className="form-control me-2" 

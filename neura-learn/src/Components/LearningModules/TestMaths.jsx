@@ -13,7 +13,7 @@ const TestMaths = () => {
   return (
     <TestFormat
       link = "/learning-modules/maths"
-      title="Maths Quiz"
+      title="Maths"
       questions={questionsData}
      />
   );

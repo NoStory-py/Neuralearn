@@ -3,7 +3,6 @@ import React from 'react'
 import './NavigationButtons.css'
 
 const NavigationButtons = ({buttons = [], includeModules = true}) => {
-    console.log(buttons)
     return (
 
         <div className="modules-navigation">

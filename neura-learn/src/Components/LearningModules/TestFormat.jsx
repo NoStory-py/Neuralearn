@@ -12,15 +12,15 @@ const TestFormat = ({ title, questions = [], renderQuestion, link }) => {
   const [showResults, setShowResults] = useState(false);
   const [answered, setAnswered] = useState(false);
   const timerRef = useRef(null);
+  const submittedRef = useRef(false);
 
-  const handleAnswer = useCallback((selected) => {
+  const handleAnswer = useCallback(async (selected) => {
 
     if (answered || current >= shuffledQuestions.length) return;
 
     setAnswered(true);
     const isCorrect = selected === shuffledQuestions[current].answer;
     if (isCorrect) setScore(prev => prev + 1);
-
 
     clearInterval(timerRef.current);
     setTimeout(() => {
@@ -35,13 +35,46 @@ const TestFormat = ({ title, questions = [], renderQuestion, link }) => {
     }, 500);
   }, [current, answered, shuffledQuestions]);
 
-
   useEffect(() => {
+    if (showResults) return
+
     timerRef.current = setInterval(() => {
       setTimeLeft(t => (t <= 1 ? (handleAnswer(""), 0) : t - 1));
     }, 1000);
     return () => clearInterval(timerRef.current);
-  }, [current, handleAnswer]);
+  }, [current, showResults, handleAnswer]);
+
+
+  useEffect(() => {
+    if (!showResults || submittedRef.current) return;
+    submittedRef.current = true;
+
+    const submit = async () => {
+      try {
+        const response = await fetch("http://localhost:8000/test", {
+          method: "PUT",
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ module: title, marks: [score] }),
+        });
+
+        if (!response.ok) {
+  
+          console.error("Failed to save score:", response.status, await response.text());
+          return;
+        }
+
+        console.log("Score saved successfully!");
+      } catch (err) {
+
+        console.error("Network error while saving score:", err);
+      }
+    };
+
+    submit();
+  }, [showResults, score, title]);
 
   if (!shuffledQuestions[current]) {
     return <div>Loading question...</div>;
@@ -109,7 +142,7 @@ const TestFormat = ({ title, questions = [], renderQuestion, link }) => {
 
     <div className="test-container">
       <div className="container d-flex flex-column justify-content-center align-items-center vh-100">
-        <h1>{title}</h1>
+        <h1>{title} Quiz</h1>
         <div className={`fw-bold ${timeLeft <= 3 ? "timer-danger" : "timer"}`}>
           Time Left: {timeLeft}s
         </div>

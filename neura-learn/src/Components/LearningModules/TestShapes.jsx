@@ -13,7 +13,7 @@ const TestShapes = () => {
   return (
     <TestFormat
       link = "/learning-modules/shapes"
-      title="Shapes Quiz"
+      title="Shapes"
       questions={questionsData}
      />
   );

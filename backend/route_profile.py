@@ -19,7 +19,7 @@ async def update_profile(
     user_id = user["_id"]
 
     # Convert Pydantic model to dictionary, removing None values
-    update_data = {k: v for k, v in profile_data.model_dump().items() if v is not None}
+    update_data = profile_data.model_dump()
 
     if not update_data:
         raise HTTPException(status_code=400, detail="No fields to update")

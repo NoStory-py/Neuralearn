@@ -13,7 +13,7 @@ const TestAlphabets = () => {
   return (
     <TestFormat
       link = "/learning-modules/alphabets"
-      title="Alphabets Quiz"
+      title="Alphabets"
       questions={questionsData}
      />
   );
