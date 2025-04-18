@@ -100,11 +100,11 @@ def main():
     print("🟡 Loss Function & Optimizer Defined")
 
     # Train Function to train the model
-    train_model(model, train_loader, valid_loader, test_loader, criterion, optimizer, scheduler, num_epochs=10, device=device)
+    # train_model(model, train_loader, valid_loader, test_loader, criterion, optimizer, scheduler, num_epochs=10, device=device)
 
     # External Test
-    # model.load_state_dict(torch.load("best_model.pth", weights_only=True))
-    # print(test_model(model, test_loader, criterion, device))
+    model.load_state_dict(torch.load("best_model.pth", weights_only=True))
+    print(test_model(model, test_loader, criterion, device))
 
 # Model Training Function
 def train_model(model, train_loader, val_loader, test_loader, criterion, optimizer, scheduler, num_epochs=10, device="cpu"):

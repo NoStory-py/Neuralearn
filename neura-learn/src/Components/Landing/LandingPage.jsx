@@ -1,8 +1,10 @@
-import { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import './LandingPage.css';
 
 function LandingPage() {
+  const isAuthenticated = localStorage.getItem("token");
+
+
 
   return (
     <>
@@ -19,7 +21,9 @@ function LandingPage() {
               <h2 data-aos="fade-up" data-aos-delay="100">Learning Today,<br />Leading Tomorrow</h2>
               <p data-aos="fade-up" data-aos-delay="200">A Learning website for children with autism spectrum disorder</p>
               <div className="d-flex mt-4" data-aos="fade-up" data-aos-delay="300">
-                <Link className="btn-get-started" to="/login">Get started</Link>
+                <Link className="btn-get-started" to={isAuthenticated ? "/home" : "/login"}>
+                  {isAuthenticated ? "Go to Home" : "Get Started"}
+                </Link>
               </div>
             </div>
 
@@ -39,7 +43,7 @@ function LandingPage() {
                 <div className="col-lg-6 order-2 order-lg-1 content" data-aos="fade-up" data-aos-delay="200">
                   <h3>Personalized Learning Paths</h3>
                   <p className="fst-italic">
-                    At EmpowerEd, we understand that every child with autism is unique, with their own strengths, challenges, and learning style.
+                    At NeuraLearn, we understand that every child with autism is unique, with their own strengths, challenges, and learning style.
                     That's why we offer personalized learning paths tailored to each individual's needs.
                   </p>
                   <ul> <li><i className="bi bi-check-circle"></i> <span>Customized lesson plans based on your child's goals and objectives</span></li>
@@ -63,9 +67,9 @@ function LandingPage() {
 
                 <div className="col-lg-4" data-aos="fade-up" data-aos-delay="100">
                   <div className="why-box">
-                    <h3>Why Choose EmpowerEd?</h3>
+                    <h3>Why Choose NeuraLearn?</h3>
                     <p>
-                      At EmpowerEd, we're dedicated to empowering children with autism to reach their full potential.
+                      At NeuraLearn, we're dedicated to empowering children with autism to reach their full potential.
                       Our platform is designed to provide a supportive and engaging learning environment that fosters growth, confidence, and independence.
                     </p>
                     <div className="text-center">
@@ -235,7 +239,7 @@ function LandingPage() {
           </section>
 
         </main>
-    </div>
+      </div>
     </>
   )
 }

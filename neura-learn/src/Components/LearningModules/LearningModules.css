@@ -28,6 +28,11 @@
     margin-top: 0px !important;
 }
 
+.body-learning h3 {
+    color: #37423b;
+    font-family: "Raleway",  sans-serif;
+}
+
 .subject-selection {
     text-align: center;
     margin-top: 40px;

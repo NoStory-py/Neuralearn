@@ -8,6 +8,16 @@ function ChooseGames() {
             <div className="container">
                 <h1 className="text-center mb-4"><b>Fun Interactive Games</b></h1>
                 <div className="row justify-content-center">
+                <div className="col-md-4 col-sm-6 mb-4">
+                        <div className="game-card">
+                            <img src="/Images/wordleImg.png" alt="Game 1" className="img-fluid" />
+                            <div className="card-content">
+                                <h3 className="text-center">Wordle Game</h3>
+                                <p className="text-center">Guess the 5-letter word in 6 attempts or less.</p>
+                                <Link className="btn btn-primary btn-block" to="/games/wordle">Play Now!</Link>
+                            </div>
+                        </div>
+                    </div>
                     <div className="col-md-4 col-sm-6 mb-4">
                         <div className="game-card">
                             <img src="Images/guessNo.jpg" alt="Game 1" className="img-fluid" />
@@ -29,17 +39,7 @@ function ChooseGames() {
                                 <h3 className="text-center">Memory card game</h3>
                                 <p className="text-center"> Match identical cards to test your memory and
                                     concentration skills in this fun and challenging game.</p>
-                                <a href="/Games/Memory Card Games/Memory Cards Game [Demo 2]/memory.html" className="btn btn-primary btn-block">Play Now!</a>
-                            </div>
-                        </div>
-                    </div>
-                    <div className="col-md-4 col-sm-6 mb-4">
-                        <div className="game-card">
-                            <img src="/Images/wordleImg.png" alt="Game 1" className="img-fluid" />
-                            <div className="card-content">
-                                <h3 className="text-center">Wordle Game</h3>
-                                <p className="text-center">Guess the 5-letter word in 6 attempts or less.</p>
-                                <a href="/Games/wordle/wordleHome.html" className="btn btn-primary btn-block">Play Now!</a>
+                                    <Link className="btn btn-primary btn-block" to="/games/memory-card">Play Now!</Link>
                             </div>
                         </div>
                     </div>

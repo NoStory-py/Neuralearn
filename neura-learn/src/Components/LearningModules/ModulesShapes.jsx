@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import './ModulesShapes.css';
 import VideoSection from './VideoSection';
+import NavigationButtons from './NavigationButtons';
 
 function ModulesShapes() {
     const [visibleInfo, setVisibleInfo] = useState(null);
@@ -34,10 +35,9 @@ function ModulesShapes() {
                 ))}
             </div>
 
-            <div className="navigation">
-                <button className="nav-button">Home</button>
-                <button className="nav-button">Take Test</button>
-            </div>
+            <NavigationButtons
+            buttons={[{name: "Start Test", link: "/learning-modules/shapes/test"}]}
+            />
 
             <VideoSection
                 title="Video Explanation"

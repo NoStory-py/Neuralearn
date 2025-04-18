@@ -1,12 +1,12 @@
 .body-guessnumber {
-  background-image: Linear-gradient(to right, red, green, blue, yellow);
+  background: linear-gradient(to bottom right, #c3cfe2, #f5f7fa);
   padding: 20px
 }
 
 #h1-guessnumber {
   text-align: center;
   font-family: 'Krona One', sans-serif;
-  color: rgb(0, 255, 242);
+  color: navy;
   font-size: 300%;
   font-weight: bold;
   
@@ -15,7 +15,7 @@
 #h2-guessnumber {
   text-align: center;
   font-family: 'Krona One', sans-serif;
-  color: rgb(51, 255, 0);
+  color: rgb(26, 111, 5);
   font-size: 150%;
   font-weight: bold;
   margin: 10px;

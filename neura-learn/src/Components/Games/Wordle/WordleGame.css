@@ -1,0 +1,111 @@
+.wordle-game {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  background: linear-gradient(135deg, #fce3e3 0%, #f8e8d8 50%, #d4f1f4 100%);
+  color: rgb(0, 0, 0);
+  padding-top: 1rem;
+  gap: 2rem;
+}
+
+.wordle-game h1{
+  font-weight: bold;
+  font-size: 4rem;
+  margin: 0;
+}
+
+.wordle-game .game {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-around;
+  gap: 2rem;
+}
+
+.wordle-game .board {
+  width: 350px;
+  height: 390px;
+  display: flex;
+  flex-direction: column;
+  border: 2px solid grey;
+  background-color: rgb(28, 28, 28);
+  padding: 10px;
+}
+
+.wordle-game .row {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin: 5px 0;
+}
+
+.wordle-game .letter {
+  width: 50px;
+  height: 50px;
+  border: 2px solid rgb(255, 255, 255);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 30px;
+  font-weight: bold;
+  color: white;
+  font-family: Arial, Helvetica, sans-serif;
+  text-transform: uppercase;
+}
+
+.wordle-game #correct {
+  background-color: #528d4e;
+}
+
+.wordle-game #almost {
+  background-color: #b49f39;
+}
+
+.wordle-game #error {
+  background-color: #3a393c;
+}
+
+.wordle-game .keyboard {
+  width: 100%;
+  max-width: 700px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: 0;
+}
+
+.wordle-game .line1,
+.wordle-game .line2,
+.wordle-game .line3 {
+  display: flex;
+  justify-content: center;
+  gap: 5px;
+}
+
+.wordle-game .key {
+  width: 50px;
+  height: 50px;
+  border: 2px solid black;
+  margin: 2px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  font-weight: bold;
+  background-color: grey;
+  color: white;
+  font-family: Arial, Helvetica, sans-serif;
+  cursor: pointer;
+  text-transform: uppercase;
+}
+
+.wordle-game #big {
+  width: 7rem;
+}
+
+.wordle-game #disabled {
+  background-color: #3a393c;
+}

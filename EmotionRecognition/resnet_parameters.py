@@ -8,8 +8,8 @@ class Parameters:
         self.determinisitc = True  # Enable data augmentation
 
         # Data augmentation settings
-        self.max_shift = 0.05    
-        self.max_scale = 1.1    
-        self.max_angle = 15.0    
-        self.max_skew = 0.03    
-        self.do_flip = True      
+        self.max_shift = 0.1  
+        self.max_scale = 1.2   
+        self.max_angle = 20.0  
+        self.max_skew = 0.1
+        self.do_flip = True        

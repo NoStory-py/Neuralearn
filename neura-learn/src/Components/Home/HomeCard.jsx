@@ -27,13 +27,13 @@ function HomeCard() {
       <div className="row mb-2">
 
         <CardItem
-          title="🎥 Learn from our expert tutors!"
-          subtitle="Educational Videos"
-          description="Engaging videos designed to capture attention and teach key concepts."
+          title="📚 Explore Interactive Learning!"
+          subtitle="Learning Modules"
+          description="Engaging modules designed to capture attention and teach key concepts."
           link="/learning-modules"
-          linkname="Watch now 🎥"
+          linkname="Start Learning 📚"
           image="/Images/educational-videos.jpg"
-          imagealt="Educational Videos"
+          imagealt="Learning Modules"
         />
 
         <CardItem

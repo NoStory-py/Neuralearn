@@ -67,10 +67,11 @@ function Navbar() {
             </li>
 
             <li className="nav-item">
-              <Link className="nav-link kids-link" to="/contact">
-                📮 Contact
+              <Link className="nav-link kids-link" to="/profile">
+              👤 Profile
               </Link>
             </li>
+            
           </ul>
 
           <ul className="navbar-nav mb-2 mb-lg-0">
