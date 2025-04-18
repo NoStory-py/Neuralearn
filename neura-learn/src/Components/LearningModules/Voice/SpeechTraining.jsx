@@ -2,12 +2,15 @@ import React, { useState, useRef, useEffect } from "react";
 import axios from "axios";
 import "./SpeechTraining.css";
 
+const API_BASE = process.env.REACT_APP_API_BASE || "http://localhost:9000";
+
 const SpeechTraining = () => {
   const [currentWord, setCurrentWord] = useState('');
+  const [words, setWords] = useState([]);
   const [showWord, setShowWord] = useState(false);
   const [phase, setPhase] = useState('start');
   const [score, setScore] = useState(0);
-  const [attempts, setAttempts] = useState(0);
+  const [sessionId, setSessionId] = useState("");
   const [inputMethod, setInputMethod] = useState('mic');
   const [result, setResult] = useState(null);
   const [error, setError] = useState(null);
@@ -21,7 +24,6 @@ const SpeechTraining = () => {
   const utteranceRef = useRef(null);
   const selectedVoice = useRef(null);
 
-  // Voice initialization
   useEffect(() => {
     const loadVoices = () => {
       const voices = speechSynth.current.getVoices();
@@ -49,6 +51,23 @@ const SpeechTraining = () => {
     };
   }, []);
 
+  useEffect(() => {
+    const newSessionId =
+      Date.now().toString(36) + Math.random().toString(36).substr(2);
+    setSessionId(newSessionId);
+    
+    axios.get(`${API_BASE}/api/speech-training/words`)
+      .then(res => setWords(res.data.words))
+      .catch(err => console.error("Error loading words:", err));
+  }, []);
+
+  useEffect(() => {
+    if (error) {
+      const timer = setTimeout(() => setError(null), 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [error]);
+
   const speak = (text) => {
     if (!speechSynth.current || !utteranceRef.current) return;
     
@@ -61,8 +80,9 @@ const SpeechTraining = () => {
   };
 
   const startTraining = () => {
+    if (words.length === 0) return;
+    
     setPhase('showingWord');
-    const words = ["apple", "ball", "cat", "dog", "egg", "fish", "goat", "hat"];
     const newWord = words[Math.floor(Math.random() * words.length)];
     setCurrentWord(newWord);
     setShowWord(true);
@@ -78,7 +98,7 @@ const SpeechTraining = () => {
   const handleSubmit = async (response) => {
     try {
       const formData = new FormData();
-      formData.append("session_id", "speech-training");
+      formData.append("session_id", sessionId);
       formData.append("mode", "speech_training");
       formData.append("question", currentWord);
 
@@ -92,7 +112,7 @@ const SpeechTraining = () => {
         formData.append("text_response", response);
       }
 
-      const res = await axios.post("http://localhost:9000/analyze", formData);
+      const res = await axios.post(`${API_BASE}/analyze`, formData);
       setResult(res.data);
       setAudioBlob(null);
 
@@ -107,7 +127,6 @@ const SpeechTraining = () => {
           setPhase('responding');
         }, 2000);
       } else {
-        setAttempts(a => a + 1);
         speak("Let's try again");
         setTimeout(() => {
           setShowWord(true);
@@ -116,9 +135,7 @@ const SpeechTraining = () => {
         }, 2000);
       }
       
-      if (inputMethod === 'text') {
-        setTextInput("");
-      }
+      if (inputMethod === 'text') setTextInput("");
     } catch (err) {
       setError(err.response?.data?.detail || "Analysis failed");
     }

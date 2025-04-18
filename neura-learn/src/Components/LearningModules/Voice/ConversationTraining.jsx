@@ -2,6 +2,8 @@ import React, { useState, useRef, useEffect } from "react";
 import axios from "axios";
 import "./ConversationTraining.css";
 
+const API_BASE = process.env.REACT_APP_API_BASE || "http://localhost:9000";
+
 const ConversationTraining = () => {
   const [sessionId, setSessionId] = useState("");
   const [inputMethod, setInputMethod] = useState("voice");
@@ -20,29 +22,50 @@ const ConversationTraining = () => {
   const speechSynth = useRef(window.speechSynthesis);
   const utteranceRef = useRef(null);
   const selectedVoice = useRef(null);
+  const mediaStreamRef = useRef(null);
+
+  // Cleanup media resources
+  const cleanupMedia = () => {
+    if (mediaStreamRef.current) {
+      mediaStreamRef.current.getTracks().forEach((track) => track.stop());
+      mediaStreamRef.current = null;
+    }
+    mediaRecorderRef.current = null;
+    audioChunksRef.current = [];
+  };
 
   useEffect(() => {
-    const loadVoices = () => {
-      const voices = speechSynth.current.getVoices();
-      const targetVoice = voices.find((voice) => {
-        const isFemale =
-          voice.name.includes("Female") ||
-          voice.name.includes("Zira") ||
-          voice.name.includes("Child");
-        const isChildlike =
-          voice.name.includes("Child") || voice.lang === "en-US";
-        return isFemale && isChildlike;
-      });
-      selectedVoice.current = targetVoice || voices[0];
+    const synth = speechSynth.current; // Capture current value in local variable
+    const handleBeforeUnload = () => {
+      if (synth.speaking) {
+        synth.cancel();
+      }
+      cleanupMedia();
     };
 
-    speechSynth.current.onvoiceschanged = loadVoices;
-    loadVoices();
-
+    window.addEventListener("beforeunload", handleBeforeUnload);
     return () => {
-      speechSynth.current.onvoiceschanged = null;
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+      // Use the captured value in cleanup
+      if (synth.speaking) {
+        synth.cancel();
+      }
+      cleanupMedia();
     };
   }, []);
+
+  useEffect(() => {
+    const newSessionId =
+      Date.now().toString(36) + Math.random().toString(36).substr(2);
+    setSessionId(newSessionId);
+  }, []);
+
+  useEffect(() => {
+    if (error) {
+      const timer = setTimeout(() => setError(null), 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [error]);
 
   const speakText = (text) => {
     if (!text) return;
@@ -51,7 +74,6 @@ const ConversationTraining = () => {
     }
 
     utteranceRef.current = new SpeechSynthesisUtterance(text);
-
     if (selectedVoice.current) {
       utteranceRef.current.voice = selectedVoice.current;
     }
@@ -70,14 +92,8 @@ const ConversationTraining = () => {
   };
 
   useEffect(() => {
-    const newSessionId =
-      Date.now().toString(36) + Math.random().toString(36).substr(2);
-    setSessionId(newSessionId);
-  }, []);
-
-  useEffect(() => {
     axios
-      .get(`http://localhost:9000/questions/${selectedSet}`)
+      .get(`${API_BASE}/questions/${selectedSet}`)
       .then((res) => {
         setQuestionSets((s) => ({ ...s, [selectedSet]: res.data }));
         if (res.data.length > 0) {
@@ -98,6 +114,7 @@ const ConversationTraining = () => {
       if (speechSynth.current.speaking) {
         speechSynth.current.cancel();
       }
+      cleanupMedia();
     };
 
     window.addEventListener("beforeunload", handleBeforeUnload);
@@ -108,26 +125,29 @@ const ConversationTraining = () => {
 
   const startRecording = async () => {
     try {
+      cleanupMedia(); // Clean up previous recordings
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      mediaStreamRef.current = stream;
+
       mediaRecorderRef.current = new MediaRecorder(stream);
+      audioChunksRef.current = []; // Reset chunks array
+
       mediaRecorderRef.current.ondataavailable = (e) => {
         if (e.data.size > 0) audioChunksRef.current.push(e.data);
       };
+
       mediaRecorderRef.current.start();
       setRecording(true);
     } catch (err) {
-      handleError("Microphone access required");
+      setError("Microphone access required");
     }
   };
 
   const stopRecording = () => {
-    mediaRecorderRef.current?.stop();
+    if (mediaRecorderRef.current?.state === "recording") {
+      mediaRecorderRef.current.stop();
+    }
     setRecording(false);
-  };
-
-  const handleError = (message) => {
-    setError(message);
-    setScore((s) => Math.max(0, s - 1));
   };
 
   const handleSubmit = async (e) => {
@@ -143,7 +163,7 @@ const ConversationTraining = () => {
 
     if (inputMethod === "voice") {
       if (audioChunksRef.current.length === 0) {
-        handleError("Please record a response");
+        setError("Please record a response");
         return;
       }
       const audioBlob = new Blob(audioChunksRef.current, {
@@ -152,20 +172,20 @@ const ConversationTraining = () => {
       formData.append("audio", audioBlob, "response.webm");
     } else {
       if (!textResponse.trim()) {
-        handleError("Please enter a text response");
+        setError("Please enter a text response");
         return;
       }
       formData.append("text_response", textResponse);
     }
 
     try {
-      const response = await axios.post(
-        "http://localhost:9000/analyze",
-        formData
-      );
+      const response = await axios.post(`${API_BASE}/analyze`, formData);
       setResult(response.data);
 
-      // If it's an emotion response, speak it and move to the next question after 2 seconds
+      // Reset media resources after successful submission
+      cleanupMedia();
+      audioChunksRef.current = [];
+
       if (response.data.emotion_response) {
         speakText(response.data.emotion_response);
         setTimeout(() => {
@@ -177,8 +197,7 @@ const ConversationTraining = () => {
             return prev + 1;
           });
           setTextResponse("");
-          audioChunksRef.current = [];
-          setResult(null); // clear the response box after 2 seconds
+          setResult(null);
         }, 2000);
       } else if (response.data.is_correct) {
         speakText("Awesome answer! Let's move to the next question.");
@@ -195,14 +214,13 @@ const ConversationTraining = () => {
             });
             setShowSuccess(false);
             setTextResponse("");
-            audioChunksRef.current = [];
           }, 500);
         };
       } else if (response.data.suggestions?.length > 0) {
         speakText(response.data.suggestions.join(". "));
       }
     } catch (err) {
-      handleError(err.response?.data?.detail || "Analysis failed");
+      setError(err.response?.data?.detail || "Analysis failed");
     }
   };
 
@@ -234,7 +252,9 @@ const ConversationTraining = () => {
               </h2>
               <span className="question-counter">
                 {questionSets[selectedSet]?.length > currentQuestionIndex
-                  ? `Question ${currentQuestionIndex + 1} of ${questionSets[selectedSet]?.length}`
+                  ? `Question ${currentQuestionIndex + 1} of ${
+                      questionSets[selectedSet]?.length
+                    }`
                   : "Completed!"}
               </span>
             </div>
@@ -296,39 +316,39 @@ const ConversationTraining = () => {
                   {result.emotion_response}
                 </div>
               </div>
-            ) : result && (
-              <div
-                className={`feedback-box ${
-                  result.is_correct ? "positive" : "improvement-needed"
-                }`}
-              >
-                {result.is_correct ? (
-                  <>
-                    <div className="positive-message">
-                      🌟 Awesome Answer!
-                    </div>
-                    <div className="encouragement">
-                      Next question loading...
-                    </div>
-                  </>
-                ) : (
-                  <>
-                    <div className="improvement-message">
-                      💡 Let's Try Again
-                    </div>
-                    {result.suggestions.map((suggestion, i) => (
-                      <div
-                        key={i}
-                        className="suggestion"
-                        onMouseEnter={() => handleHoverSpeak(suggestion)}
-                        onMouseLeave={() => speechSynth.current.cancel()}
-                      >
-                        {suggestion}
+            ) : (
+              result && (
+                <div
+                  className={`feedback-box ${
+                    result.is_correct ? "positive" : "improvement-needed"
+                  }`}
+                >
+                  {result.is_correct ? (
+                    <>
+                      <div className="positive-message">🌟 Awesome Answer!</div>
+                      <div className="encouragement">
+                        Next question loading...
                       </div>
-                    ))}
-                  </>
-                )}
-              </div>
+                    </>
+                  ) : (
+                    <>
+                      <div className="improvement-message">
+                        💡 Let's Try Again
+                      </div>
+                      {result.suggestions.map((suggestion, i) => (
+                        <div
+                          key={i}
+                          className="suggestion"
+                          onMouseEnter={() => handleHoverSpeak(suggestion)}
+                          onMouseLeave={() => speechSynth.current.cancel()}
+                        >
+                          {suggestion}
+                        </div>
+                      ))}
+                    </>
+                  )}
+                </div>
+              )
             )}
 
             {error && <div className="error-box">{error}</div>}
