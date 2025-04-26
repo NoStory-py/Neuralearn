@@ -1,81 +1,82 @@
-import React from 'react'
+import React, { useEffect, useState } from 'react'
 import "./ModulesAlphabets.css"
 import VideoSection from './VideoSection.jsx'
 import NavigationButtons from './NavigationButtons.jsx'
 
 const ModulesAlphabets = () => {
-    return (
-        <div className="body-alphabets">
+  return (
+    <div className="body-alphabets">
+      <h1>Learn Alphabets A to Z</h1>
 
-            <h1>Learn Alphabets A to Z</h1>
+      <div className="alphabet-cards">
+        {[
+          ["A","Apple"], ["B","Ball"], ["C","Cat"], ["D","Dog"], ["E","Elephant"],
+          ["F","Fish"], ["G","Goat"], ["H","Hat"], ["I","Ice cream"], ["J","Jelly"],
+          ["K","Kite"], ["L","Lion"], ["M","Monkey"], ["N","Nest"], ["O","Orange"],
+          ["P","Parrot"], ["Q","Queen"], ["R","Rabbit"], ["S","Sun"], ["T","Tiger"],
+          ["U","Umbrella"], ["V","Van"], ["W","Whale"], ["X","Xylophone"], ["Y","Yak"],
+          ["Z","Zebra"]
+        ].map(([letter, word]) => (
+          <AlphabetsCard key={letter} letter={letter} word={word} />
+        ))}
+      </div>
 
-            <div className="alphabet-cards">
-                <AlphabetsCard letter="A" word="Apple" />
-                <AlphabetsCard letter="B" word="Ball" />
-                <AlphabetsCard letter="C" word="Cat" />
-                <AlphabetsCard letter="D" word="Dog" />
-                <AlphabetsCard letter="E" word="Elephant" />
-                <AlphabetsCard letter="F" word="Fish" />
-                <AlphabetsCard letter="G" word="Goat" />
-                <AlphabetsCard letter="H" word="Hat" />
-                <AlphabetsCard letter="I" word="Ice cream" />
-                <AlphabetsCard letter="J" word="Jelly" />
-                <AlphabetsCard letter="K" word="Kite" />
-                <AlphabetsCard letter="L" word="Lion" />
-                <AlphabetsCard letter="M" word="Monkey" />
-                <AlphabetsCard letter="N" word="Nest" />
-                <AlphabetsCard letter="O" word="Orange" />
-                <AlphabetsCard letter="P" word="Parrot" />
-                <AlphabetsCard letter="Q" word="Queen" />
-                <AlphabetsCard letter="R" word="Rabbit" />
-                <AlphabetsCard letter="S" word="Sun" />
-                <AlphabetsCard letter="T" word="Tiger" />
-                <AlphabetsCard letter="U" word="Umbrella" />
-                <AlphabetsCard letter="V" word="Van" />
-                <AlphabetsCard letter="W" word="Whale" />
-                <AlphabetsCard letter="X" word="Xylophone" />
-                <AlphabetsCard letter="Y" word="Yak" />
-                <AlphabetsCard letter="Z" word="Zebra" />
-            </div>
+      <NavigationButtons
+        buttons={[{ name: "Start Test", link: "/learning-modules/alphabets/test" }]}
+      />
 
-            <NavigationButtons
-            buttons={[{name:"Start Test", link : "/learning-modules/alphabets/test"}]}
-            />
-
-            <VideoSection
-            title = "Video Explaination"
-            desc = "Refer to this video for better understanding:"
-            src="https://www.youtube.com/embed/hq3yfQnllfQ?si=x6gqUyw_rbeg8FTK&amp;start=9"
-            />
-
-        </div>
-    )
+      <VideoSection
+        title="Video Explanation"
+        desc="Refer to this video for better understanding:"
+        src="https://www.youtube.com/embed/hq3yfQnllfQ?si=x6gqUyw_rbeg8FTK&amp;start=9"
+      />
+    </div>
+  )
 }
 
 export default ModulesAlphabets;
 
+
 function AlphabetsCard({ letter, word }) {
-    const speak = () => {
-        const utterance = new SpeechSynthesisUtterance(`${letter} for ${word}`);
-        
-        // Adjusting voice properties for a playful sound
-        utterance.pitch = 1.3;  // Higher pitch makes it sound fun
-        utterance.rate = 0.95;   // Slightly faster for an energetic feel
+  const [voice, setVoice] = useState(null)
 
-        const voices = speechSynthesis.getVoices();
-        // Try to find a more playful voice
-        utterance.voice = voices.find(voice => voice.name.includes("Google UK English Female")) || voices[0];
+  useEffect(() => {
+    const loadVoices = () => {
+      const all = speechSynthesis.getVoices()
+      // find any voice whose name includes "female"
+      let female = all.find(v => v.name.toLowerCase().includes("female"))
+      if (!female) {
+        // fallback: use first English voice
+        female = all.find(v => v.lang.startsWith("en")) || all[0]
+      }
+      setVoice(female)
+    }
 
-        speechSynthesis.cancel(); // Stop any ongoing speech
-        speechSynthesis.speak(utterance);
-    };
+    // Chrome/Firefox fire this event once voices are loaded
+    speechSynthesis.onvoiceschanged = loadVoices
+    // try immediate load too (in case voices are already available)
+    loadVoices()
 
-    return (
-        <div className="alphabet-card" onMouseEnter={speak}>
-            <div className="hover-effect"></div>
-            <div className="letter">{letter}</div>
-            <div className="word">{word}</div>
-        </div>
-    );
+    // cleanup
+    return () => { speechSynthesis.onvoiceschanged = null }
+  }, [])
+
+  const speak = () => {
+    if (!voice) return // not ready yet
+    const utterance = new SpeechSynthesisUtterance(`${letter} for ${word}`)
+    utterance.voice = voice
+    utterance.pitch = 1.3
+    utterance.rate = 0.95
+
+    speechSynthesis.cancel()
+    speechSynthesis.speak(utterance)
+  }
+
+  return (
+    <div className="alphabet-card" onMouseEnter={speak}>
+      <div className="hover-effect"></div>
+      <div className="letter">{letter}</div>
+      <div className="word">{word}</div>
+    </div>
+  )
 }
-

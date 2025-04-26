@@ -34,8 +34,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Initialize Whisper
-whisper_model = whisper.load_model("small", device="cpu")
+# Initialize Whisper model with proper configuration
+whisper_model = whisper.load_model("base", device="cpu")
 
 def transcribe_with_whisper(wav_path: str) -> str:
     try:

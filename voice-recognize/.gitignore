@@ -1,0 +1,5 @@
+# Ignore Python virtual environment
+whisper-env/
+# Python
+__pycache__/
+.vscode/
