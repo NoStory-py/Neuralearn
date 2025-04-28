@@ -1,5 +1,5 @@
 import bcrypt
-import jwt
+from jose import jwt
 from datetime import datetime, timedelta
 from fastapi import Depends, HTTPException
 from fastapi.security import OAuth2PasswordBearer

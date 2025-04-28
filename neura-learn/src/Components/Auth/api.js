@@ -20,10 +20,20 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401) {
+    const originalRequestUrl = error.config?.url;
+
+    // If 401 happens on protected APIs only, then redirect
+    if (
+      error.response?.status === 401 &&
+      !originalRequestUrl.includes("/forgot-password") &&
+      !originalRequestUrl.includes("/reset-password") &&
+      !originalRequestUrl.includes("/signup") &&
+      !originalRequestUrl.includes("/login")
+    ) {
       localStorage.removeItem("token");
       window.location = "/login";
     }
+
     return Promise.reject(error);
   }
 );

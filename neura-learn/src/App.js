@@ -19,6 +19,8 @@ import MemoryGame from "./Components/Games/Memory/MemoryGame";
 
 import Login from "./Components/Auth/Login";
 import Signup from "./Components/Auth/Signup";
+import ForgotPassword from "./Components/Auth/ForgotPassword";
+import ResetPassword from "./Components/Auth/ResetPassword";
 
 import LearningModules from './Components/LearningModules/LearningModules';
 import ModulesMaths from "./Components/LearningModules/ModulesMaths";
@@ -45,6 +47,8 @@ function App() {
         <Route path="/" element={<LandingPage />} />
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/reset-password/:token" element={<ResetPassword />} />
 
         {/* Protected routes */}
         <Route element={<ProtectedRoute />}>
