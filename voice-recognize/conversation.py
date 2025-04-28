@@ -2,17 +2,9 @@
 from transformers import pipeline, AutoTokenizer, AutoModelForSequenceClassification
 from shared import *
 from fastapi import HTTPException
+from collections import Counter
 
 # Conversation constants
-QUESTION_SUGGESTIONS = {
-    "What's your name?": "No repeating! Try: My name is Alex",
-    "Are you a boy or girl?": "No repeating! Try: I am a boy",
-    "How old are you?": "No repeating! Try: I am 8 years old",
-    "What's your favorite color?": "No repeating! Try: My favorite is blue",
-    "What do you like to eat?": "No repeating! Try: I like pizza",
-    "What's your favorite animal?": "No repeating! Try: I love dolphins"
-}
-
 QUESTION_SETS = {
     "main": [
         {"question": "What's your name?"},
@@ -21,6 +13,7 @@ QUESTION_SETS = {
         {"question": "What's your favorite color?"},
         {"question": "What do you like to eat?"},
         {"question": "What's your favorite animal?"},
+        {"question": "What's your favorite cartoon?", "type": "profile"},
         {"question": "How are you feeling today?", "type": "emotion"},
         {"question": "What makes you excited?", "type": "emotion"},
         {"question": "What helps you feel calm?", "type": "emotion"},
@@ -71,31 +64,37 @@ VALIDATION_CONFIG = {
         "valid": ["provides a personal name in a complete sentence"],
         "invalid": ["avoids name disclosure", "uses incomplete sentence"],
         "min_words": 3,
-        "example": "My name is Alex"
+        "example": "My name is {name}"
     },
     "What's your favorite color?": {
         "valid": ["states a valid color in a complete sentence"],
         "invalid": ["mentions non-color items", "uses incomplete phrase"],
         "min_words": 4,
-        "example": "My favorite color is blue"
+        "example": "My favorite color is {color}"
     },
     "What do you like to eat?": {
         "valid": ["mentions edible food in a complete sentence"],
         "invalid": ["talks about inedible objects", "uses incomplete phrase"],
         "min_words": 4,
-        "example": "I like to eat pizza"
+        "example": "I like to eat {food}"
     },
     "What's your favorite animal?": {
         "valid": ["identifies an animal in a complete sentence"],
         "invalid": ["mentions objects", "uses incomplete phrase"],
         "min_words": 4,
-        "example": "My favorite animal is a dolphin"
+        "example": "My favorite animal is {animal}"
     },
     "How old are you?": {
         "valid": ["states age in a complete sentence with years"],
         "invalid": ["avoids age disclosure", "uses incomplete phrase"],
         "min_words": 5,
-        "example": "I am 8 years old"
+        "example": "I am {age} years old"
+    },
+    "What's your favorite cartoon?": {
+        "valid": ["mentions a cartoon or animated show in a complete sentence"],
+        "invalid": ["talks about non-cartoon media", "uses incomplete phrase"],
+        "min_words": 5,
+        "example": "My favorite cartoon is {cartoon}"
     }
 }
 
@@ -109,20 +108,38 @@ emotion_tokenizer = AutoTokenizer.from_pretrained("mrm8488/deberta-v3-base-goemo
 emotion_model = AutoModelForSequenceClassification.from_pretrained("mrm8488/deberta-v3-base-goemotions")
 emotion_classifier = pipeline("text-classification", model=emotion_model, tokenizer=emotion_tokenizer, top_k=None)
 
-async def handle_conversation(session_id, question, response_text):
+async def handle_conversation(session_id, question, response_text, user):
     suggestions = []
     is_correct = False
     emotion_response = None
     mnli_label = ""
+    profile = {
+        'username': user['profile'].get('username', ''),
+        'gender': user['profile'].get('gender', ''),
+        'age': user['profile'].get('age', ''),
+        'favoriteColor': user['profile'].get('favoriteColor', ''),
+        'favoriteFood': user['profile'].get('favoriteFood', ''),
+        'favoriteAnimal': user['profile'].get('favoriteAnimal', ''),
+        'favoriteCartoon': user['profile'].get('favoriteCartoon', '')
+    }
     
     is_echolalia = detect_echolalia(response_text, question)
     
+    # Profile-based response templates
+    profile_responses = {
+        "What's your name?": f"My name is {profile.get('username', '')}",
+        "Are you a boy or girl?": f"I am a {profile.get('gender', '').lower()}",
+        "How old are you?": f"I am {profile.get('age', '')} years old",
+        "What's your favorite color?": f"My favorite color is {profile.get('favoriteColor', '')}",
+        "What do you like to eat?": f"I like {profile.get('favoriteFood', '')}",
+        "What's your favorite animal?": f"I love {profile.get('favoriteAnimal', '')}",
+        "What's your favorite cartoon?": f"My favorite cartoon is {profile.get('favoriteCartoon', '')}"
+    }
+
     if is_echolalia:
         is_correct = False
-        suggestions.append(QUESTION_SUGGESTIONS.get(
-            question, 
-            "No repeating! Try to answer directly"
-        ))
+        example = profile_responses.get(question, "Try answering with your own words")
+        suggestions.append(f"No repeating! Try: {example}")
         mnli_label = "echolalia"
     else:
         current_question = next(
@@ -159,15 +176,19 @@ async def handle_conversation(session_id, question, response_text):
             
             if len(response_text.split()) < min_words:
                 is_correct = False
-                suggestions.append(f"Please answer in a complete sentence like: '{config.get('example', '')}'")
+                example = config["example"].format(
+                    name=profile['username'],
+                    color=profile['favoriteColor'],
+                    food=profile['favoriteFood'],
+                    animal=profile['favoriteAnimal'],
+                    age=profile['age'],
+                    cartoon=profile['favoriteCartoon']
+                )
+                suggestions.append(f"Please answer in a complete sentence like: '{example}'")
                 mnli_label = "short_answer"
             else:
                 candidate_labels = config["valid"] + config["invalid"]
                 hypothesis_template = (
-                    "The response is a complete sentence stating a favorite color, like 'My favorite color is blue': {}." 
-                    if question == "What's your favorite color?" else
-                    "The response is a complete sentence about food preferences, like 'I like to eat pizza': {}." 
-                    if question == "What do you like to eat?" else
                     "The response is a complete sentence that explicitly states: {}."
                 )
                 
@@ -184,7 +205,8 @@ async def handle_conversation(session_id, question, response_text):
         elif question.lower() == "are you a boy or girl?":
             if len(response_text.split()) < 3:
                 is_correct = False
-                suggestions.append("Please answer in a complete sentence like: 'I am a boy' or 'I am a girl'")
+                example = f"I am a {profile['gender'].lower()}" if profile['gender'] else "I am a [boy/girl]"
+                suggestions.append(f"Please answer in a complete sentence like: '{example}'")
                 mnli_label = "short_answer"
             else:
                 is_correct = any(word in normalized_response for word in ["boy", "girl"])

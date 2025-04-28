@@ -13,16 +13,16 @@
 /* Whiteboard container: locked into a fixed area of the canvas */
 .whiteboard-container {
     position: absolute;
-    top: 20%;               /* Adjust as needed */
+    top: 20%;
     left: 50%;
     transform: translateX(-50%);
     width: 80%;
     max-width: 800px;
     padding: 1.5rem;
-    background: transparent;  /* Fully transparent */
+    background: transparent;
     border-radius: 30px;
     box-sizing: border-box;
-  }
+}
   
 /* Single-line question header with bordered score, question text, and counter */
 .question-header {
@@ -146,8 +146,8 @@
     cursor: pointer;
     transition: all 0.3s ease;
     margin-top: 1.5rem;
-    display: block;       /* Make it a block element */
-    margin-left: auto;    /* Center horizontally */
+    display: block;
+    margin-left: auto;
     margin-right: auto;
 }
   
@@ -283,3 +283,50 @@ button:focus {
         width: 90%;
     }
 }
+
+/* ============================= */
+/* Completion-screen (new rules) */
+/* ============================= */
+
+.completion-screen {
+    position: fixed;
+    top: 70%;
+    left: 50%;
+    transform: translate(-50%, 15%);
+    background: transparent; /* <-- FULLY transparent */
+    padding: 2rem;
+    border-radius: 20px;
+    box-shadow: none; /* optional: remove the shadow */
+    z-index: 10;
+    width: 90%;
+    max-width: 500px;
+    text-align: center;
+}
+
+
+.completion-screen h2 {
+    font-size: 2rem;
+    color: #2c3e50;
+    margin-bottom: 1rem;
+}
+
+.completion-screen p {
+    margin: 0.5rem 0;
+    font-size: 1.2rem;
+    color: #2c3e50;
+}
+
+.score-summary {
+    margin: 1rem 0;
+}
+
+.score-summary p:first-child {
+    font-size: 1.5rem;
+    font-weight: bold;
+}
+
+.score-summary p:nth-child(2) {
+    font-size: 1.3rem;
+}
+
+/* The same analyze-btn styling will apply for the "Start New Session" button */
