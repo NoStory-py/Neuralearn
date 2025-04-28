@@ -63,4 +63,3 @@ async def get_test_summary(user: dict = Depends(get_current_user)):
         })
 
     return summary
-    
