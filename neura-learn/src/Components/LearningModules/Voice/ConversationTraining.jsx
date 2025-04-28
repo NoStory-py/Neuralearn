@@ -4,6 +4,36 @@ import "./ConversationTraining.css";
 
 const API_BASE = process.env.REACT_APP_API_BASE || "http://localhost:9000";
 
+// Completion screen with percentage & pass/fail messaging
+const CompletionScreen = ({ score, total }) => {
+  const pct = total ? Math.round((score / (total * 10)) * 100) : 0;
+  let msg;
+  if (pct >= 90) msg = "Excellent! 🌟";
+  else if (pct >= 75) msg = "Very Good! 🎉";
+  else if (pct >= 60) msg = "Good Job! 👍";
+  else if (pct >= 40) msg = "Average. Keep Trying! 💪";
+  else msg = "Let's Practice More! 😊";
+
+  return (
+    <div className="completion-screen">
+      <h2>🎉 Congratulations! 🎉</h2>
+      <p>Your Score: {pct}%</p>
+      <p>{msg}</p>
+      {pct >= 40 ? (
+        <p>You passed! 🎉</p>
+      ) : (
+        <p>You can do it—try again! 💪</p>
+      )}
+      <button
+        onClick={() => window.location.reload()}
+        className="analyze-btn"
+      >
+        Start New Session
+      </button>
+    </div>
+  );
+};
+
 const ConversationTraining = () => {
   const [sessionId, setSessionId] = useState("");
   const [inputMethod, setInputMethod] = useState("voice");
@@ -17,132 +47,158 @@ const ConversationTraining = () => {
   const [score, setScore] = useState(0);
   const [showSuccess, setShowSuccess] = useState(false);
   const [sessionCompleted, setSessionCompleted] = useState(false);
+
   const mediaRecorderRef = useRef(null);
   const audioChunksRef = useRef([]);
+  const mediaStreamRef = useRef(null);
+
   const speechSynth = useRef(window.speechSynthesis);
   const utteranceRef = useRef(null);
   const selectedVoice = useRef(null);
-  const mediaStreamRef = useRef(null);
+
+  const [authToken] = useState(localStorage.getItem("token"));
+
+  // Track attempts per question
+  const attemptsRef = useRef({});
+  const trackAttempt = () => {
+    attemptsRef.current[currentQuestionIndex] =
+      (attemptsRef.current[currentQuestionIndex] || 0) + 1;
+  };
+  const calculateMarks = () => {
+    const att = attemptsRef.current[currentQuestionIndex] || 1;
+    return Math.max(10 - (att - 1), 0);
+  };
+
+  // Clear feedback on question change
+  useEffect(() => {
+    setResult(null);
+    setError(null);
+  }, [currentQuestionIndex]);
+
+  // Auto-clear errors
+  useEffect(() => {
+    if (error) {
+      const t = setTimeout(() => setError(null), 3000);
+      return () => clearTimeout(t);
+    }
+  }, [error]);
+
+  // Load and select voices (with safe cleanup)
+  useEffect(() => {
+    const synth = speechSynth.current;
+    const loadVoices = () => {
+      const voices = synth.getVoices();
+      const tgt = voices.find((v) => /female|zira|child/i.test(v.name));
+      selectedVoice.current = tgt || voices[0] || null;
+      utteranceRef.current = new SpeechSynthesisUtterance();
+      if (selectedVoice.current) {
+        utteranceRef.current.voice = selectedVoice.current;
+        utteranceRef.current.pitch = 1.8;
+        utteranceRef.current.rate = 0.9;
+      }
+    };
+    synth.onvoiceschanged = loadVoices;
+    loadVoices();
+    return () => {
+      synth.onvoiceschanged = null;
+    };
+  }, []);
+
+  // Speak helper
+  const speakText = (text) => {
+    if (!text) return;
+    if (speechSynth.current.speaking) speechSynth.current.cancel();
+    const ut = new SpeechSynthesisUtterance(text);
+    if (selectedVoice.current) ut.voice = selectedVoice.current;
+    ut.pitch = 1.8;
+    ut.rate = 0.9;
+    ut.volume = 1;
+    speechSynth.current.speak(ut);
+  };
+
+  // On session completion, announce congratulations
+  useEffect(() => {
+    if (sessionCompleted) {
+      speakText("Congratulations!");
+    }
+  }, [sessionCompleted]);
 
   // Cleanup media resources
   const cleanupMedia = () => {
     if (mediaStreamRef.current) {
-      mediaStreamRef.current.getTracks().forEach((track) => track.stop());
+      mediaStreamRef.current.getTracks().forEach((t) => t.stop());
       mediaStreamRef.current = null;
     }
     mediaRecorderRef.current = null;
     audioChunksRef.current = [];
   };
 
+  // Cancel TTS & cleanup on unload
   useEffect(() => {
-    const synth = speechSynth.current; // Capture current value in local variable
-    const handleBeforeUnload = () => {
-      if (synth.speaking) {
-        synth.cancel();
-      }
+    const synth = speechSynth.current;
+    const handler = () => {
+      if (synth.speaking) synth.cancel();
       cleanupMedia();
     };
-
-    window.addEventListener("beforeunload", handleBeforeUnload);
+    window.addEventListener("beforeunload", handler);
     return () => {
-      window.removeEventListener("beforeunload", handleBeforeUnload);
-      // Use the captured value in cleanup
-      if (synth.speaking) {
-        synth.cancel();
-      }
+      window.removeEventListener("beforeunload", handler);
+      if (synth.speaking) synth.cancel();
       cleanupMedia();
     };
   }, []);
 
+  // Initialize session ID
   useEffect(() => {
-    const newSessionId =
-      Date.now().toString(36) + Math.random().toString(36).substr(2);
-    setSessionId(newSessionId);
+    setSessionId(
+      Date.now().toString(36) + Math.random().toString(36).slice(2)
+    );
   }, []);
 
-  useEffect(() => {
-    if (error) {
-      const timer = setTimeout(() => setError(null), 5000);
-      return () => clearTimeout(timer);
-    }
-  }, [error]);
-
-  const speakText = (text) => {
-    if (!text) return;
-    if (speechSynth.current.speaking) {
-      speechSynth.current.cancel();
-    }
-
-    utteranceRef.current = new SpeechSynthesisUtterance(text);
-    if (selectedVoice.current) {
-      utteranceRef.current.voice = selectedVoice.current;
-    }
-
-    utteranceRef.current.pitch = 1.8;
-    utteranceRef.current.rate = 0.9;
-    utteranceRef.current.volume = 1;
-
-    speechSynth.current.speak(utteranceRef.current);
-  };
-
-  const handleHoverSpeak = (text) => {
-    if (!speechSynth.current.speaking) {
-      speakText(text);
-    }
-  };
-
+  // Load questions
   useEffect(() => {
     axios
-      .get(`${API_BASE}/questions/${selectedSet}`)
+      .get(`${API_BASE}/questions/${selectedSet}`, {
+        headers: { Authorization: `Bearer ${authToken}` },
+      })
       .then((res) => {
         setQuestionSets((s) => ({ ...s, [selectedSet]: res.data }));
-        if (res.data.length > 0) {
-          setTimeout(() => speakText(res.data[0]), 500);
-        }
+        if (res.data.length > 0) speakText(res.data[0]);
       })
-      .catch((err) => console.error("Error loading questions:", err));
-  }, [selectedSet]);
+      .catch(() => {});
+  }, [selectedSet, authToken]);
 
+  // Speak when question changes
   useEffect(() => {
-    if (questionSets[selectedSet]?.[currentQuestionIndex]) {
-      speakText(questionSets[selectedSet][currentQuestionIndex]);
-    }
+    const q = questionSets[selectedSet]?.[currentQuestionIndex];
+    if (q) speakText(q);
   }, [currentQuestionIndex, questionSets, selectedSet]);
 
-  useEffect(() => {
-    const handleBeforeUnload = () => {
-      if (speechSynth.current.speaking) {
-        speechSynth.current.cancel();
-      }
-      cleanupMedia();
-    };
+  // Hover to speak
+  const handleHoverSpeak = (text) => {
+    if (!speechSynth.current.speaking) speakText(text);
+  };
 
-    window.addEventListener("beforeunload", handleBeforeUnload);
-    return () => {
-      window.removeEventListener("beforeunload", handleBeforeUnload);
-    };
-  }, []);
-
+  // Recording handlers
   const startRecording = async () => {
     try {
-      cleanupMedia(); // Clean up previous recordings
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      cleanupMedia();
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: true,
+      });
       mediaStreamRef.current = stream;
-
-      mediaRecorderRef.current = new MediaRecorder(stream);
-      audioChunksRef.current = []; // Reset chunks array
-
-      mediaRecorderRef.current.ondataavailable = (e) => {
+      const mr = new MediaRecorder(stream);
+      mediaRecorderRef.current = mr;
+      audioChunksRef.current = [];
+      mr.ondataavailable = (e) => {
         if (e.data.size > 0) audioChunksRef.current.push(e.data);
       };
-
-      mediaRecorderRef.current.start();
+      mr.start();
       setRecording(true);
-    } catch (err) {
+    } catch {
       setError("Microphone access required");
     }
   };
-
   const stopRecording = () => {
     if (mediaRecorderRef.current?.state === "recording") {
       mediaRecorderRef.current.stop();
@@ -150,26 +206,26 @@ const ConversationTraining = () => {
     setRecording(false);
   };
 
+  // Submit handler
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError(null);
 
-    const formData = new FormData();
-    const currentQuestion = questionSets[selectedSet]?.[currentQuestionIndex];
+    trackAttempt();
 
+    const formData = new FormData();
+    const currQ = questionSets[selectedSet]?.[currentQuestionIndex];
     formData.append("session_id", sessionId);
-    formData.append("question", currentQuestion);
+    formData.append("question", currQ);
     formData.append("mode", "conversation");
 
     if (inputMethod === "voice") {
-      if (audioChunksRef.current.length === 0) {
+      if (!audioChunksRef.current.length) {
         setError("Please record a response");
         return;
       }
-      const audioBlob = new Blob(audioChunksRef.current, {
-        type: "audio/webm",
-      });
-      formData.append("audio", audioBlob, "response.webm");
+      const blob = new Blob(audioChunksRef.current, { type: "audio/webm" });
+      formData.append("audio", blob, "response.webm");
     } else {
       if (!textResponse.trim()) {
         setError("Please enter a text response");
@@ -179,68 +235,81 @@ const ConversationTraining = () => {
     }
 
     try {
-      const response = await axios.post(`${API_BASE}/analyze`, formData);
-      setResult(response.data);
-
-      // Reset media resources after successful submission
+      const res = await axios.post(`${API_BASE}/analyze`, formData, {
+        headers: {
+          Authorization: `Bearer ${authToken}`,
+          "Content-Type": "multipart/form-data",
+        },
+      });
+      setResult(res.data);
       cleanupMedia();
-      audioChunksRef.current = [];
 
-      if (response.data.emotion_response) {
-        speakText(response.data.emotion_response);
+      // Emotion-response branch
+      if (res.data.emotion_response) {
+        const earned = calculateMarks();
+        setScore((s) => s + earned);
+        speakText(res.data.emotion_response);
         setTimeout(() => {
-          setCurrentQuestionIndex((prev) => {
-            if (prev + 1 >= questionSets[selectedSet]?.length) {
-              setSessionCompleted(true);
-              return prev;
-            }
-            return prev + 1;
-          });
-          setTextResponse("");
-          setResult(null);
-        }, 2000);
-      } else if (response.data.is_correct) {
-        speakText("Awesome answer! Let's move to the next question.");
-        utteranceRef.current.onend = () => {
-          setScore((s) => s + 10);
-          setShowSuccess(true);
-          setTimeout(() => {
-            setCurrentQuestionIndex((prev) => {
-              if (prev + 1 >= questionSets[selectedSet]?.length) {
-                setSessionCompleted(true);
-                return prev;
-              }
-              return prev + 1;
-            });
-            setShowSuccess(false);
+          const next = currentQuestionIndex + 1;
+          if (next < questionSets[selectedSet]?.length) {
+            setCurrentQuestionIndex(next);
             setTextResponse("");
-          }, 500);
+            setResult(null);
+          } else {
+            setSessionCompleted(true);
+          }
+        }, 2000);
+        return;
+      }
+
+      // Correct answer branch
+      if (res.data.is_correct) {
+        const earned = calculateMarks();
+        setScore((s) => s + earned);
+        const feedback = "Awesome answer! Let's move to the next question";
+        const ut = new SpeechSynthesisUtterance(feedback);
+        if (selectedVoice.current) ut.voice = selectedVoice.current;
+        ut.pitch = 1.8;
+        ut.rate = 0.9;
+        ut.onend = () => {
+          setShowSuccess(false);
+          const next = currentQuestionIndex + 1;
+          if (next < questionSets[selectedSet]?.length) {
+            setCurrentQuestionIndex(next);
+            setTextResponse("");
+            setResult(null);
+          } else {
+            setSessionCompleted(true);
+          }
         };
-      } else if (response.data.suggestions?.length > 0) {
-        speakText(response.data.suggestions.join(". "));
+        setShowSuccess(true);
+        speechSynth.current.speak(ut);
+        return;
+      }
+
+      // Suggestions branch
+      if (res.data.suggestions?.length) {
+        speakText(res.data.suggestions.join(". "));
       }
     } catch (err) {
       setError(err.response?.data?.detail || "Analysis failed");
     }
   };
 
-  const currentQuestion = questionSets[selectedSet]?.[currentQuestionIndex];
+  const currentQuestion =
+    questionSets[selectedSet]?.[currentQuestionIndex];
 
   return (
     <div className="background-container">
       <div className="whiteboard-container">
         {sessionCompleted ? (
-          <div className="completion-screen">
-            <h2>All done! 🎉 Final Score: ⭐{score}</h2>
-            <button
-              onClick={() => window.location.reload()}
-              className="analyze-btn"
-            >
-              Start New Session
-            </button>
-          </div>
+          <CompletionScreen
+            score={score}
+            total={questionSets[selectedSet]?.length}
+          />
         ) : (
           <>
+            {/* ... rest of your UI ... */}
             <div className="question-header">
               <span className="score-star">⭐ {score}</span>
               <h2
@@ -248,10 +317,12 @@ const ConversationTraining = () => {
                 onMouseEnter={() => handleHoverSpeak(currentQuestion)}
                 onMouseLeave={() => speechSynth.current.cancel()}
               >
-                {currentQuestion || "All questions completed! Great job! 🎉"}
+                {currentQuestion ||
+                  "All questions completed! Great job! 🎉"}
               </h2>
               <span className="question-counter">
-                {questionSets[selectedSet]?.length > currentQuestionIndex
+                {questionSets[selectedSet]?.length >
+                currentQuestionIndex
                   ? `Question ${currentQuestionIndex + 1} of ${
                       questionSets[selectedSet]?.length
                     }`
@@ -285,10 +356,14 @@ const ConversationTraining = () => {
                 <div className="voice-controls">
                   <button
                     type="button"
-                    className={`record-btn ${recording ? "recording" : ""}`}
+                    className={`record-btn ${
+                      recording ? "recording" : ""
+                    }`}
                     onClick={recording ? stopRecording : startRecording}
                   >
-                    {recording ? "⏹ Stop Recording" : "⏺ Start Recording"}
+                    {recording
+                      ? "⏹ Stop Recording"
+                      : "⏺ Start Recording"}
                   </button>
                   <p className="recording-hint">
                     Press and hold to record your answer
@@ -325,7 +400,9 @@ const ConversationTraining = () => {
                 >
                   {result.is_correct ? (
                     <>
-                      <div className="positive-message">🌟 Awesome Answer!</div>
+                      <div className="positive-message">
+                        🌟 Awesome answer! Let's move to the next question
+                      </div>
                       <div className="encouragement">
                         Next question loading...
                       </div>
@@ -335,14 +412,16 @@ const ConversationTraining = () => {
                       <div className="improvement-message">
                         💡 Let's Try Again
                       </div>
-                      {result.suggestions.map((suggestion, i) => (
+                      {result.suggestions.map((sug, i) => (
                         <div
                           key={i}
                           className="suggestion"
-                          onMouseEnter={() => handleHoverSpeak(suggestion)}
-                          onMouseLeave={() => speechSynth.current.cancel()}
+                          onMouseEnter={() => handleHoverSpeak(sug)}
+                          onMouseLeave={() =>
+                            speechSynth.current.cancel()
+                          }
                         >
-                          {suggestion}
+                          {sug}
                         </div>
                       ))}
                     </>
