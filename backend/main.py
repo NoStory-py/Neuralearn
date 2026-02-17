@@ -11,6 +11,7 @@ from route_test import test_router
 from protected import protected_router
 from route_story import story_router
 from route_illustration import illustration_router
+from route_recommend import recommend_router
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -37,6 +38,7 @@ app.include_router(illustration_router, prefix="/images")
 app.include_router(profile_router)
 app.include_router(test_router)
 app.include_router(protected_router)
+app.include_router(recommend_router)
 
 if __name__ == "__main__":
     import asyncio, uvicorn

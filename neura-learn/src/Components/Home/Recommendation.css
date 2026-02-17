@@ -1,0 +1,64 @@
+.recommendation-wrapper {
+  display: flex;
+  justify-content: center;
+}
+
+.recommendation-container {
+  background: #FFF6A6;
+  border-radius: 18px;
+  padding: 25px 30px;
+  max-width: 600px;
+  width: 100%;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.08);
+}
+
+.recommendation-list {
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.recommendation-item {
+  background: #e0f2fe;
+  border-radius: 14px;
+  padding: 18px 22px;
+  min-width: 180px;
+  text-align: center;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+  transition: all 0.25s ease;
+}
+
+.recommendation-item:hover {
+  transform: translateY(-5px) scale(1.03);
+  box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+}
+
+.recommendation-title {
+  font-size: 13px;
+  color: #16a34a;
+  font-weight: 600;
+}
+
+.recommendation-module {
+  font-size: 20px;
+  font-weight: 700;
+  margin: 8px 0;
+  color: #1e293b;
+}
+
+.recommendation-start {
+  display: inline-block;
+  margin-top: 6px;
+  padding: 6px 16px;
+  font-size: 14px;
+  color: white;
+  background: linear-gradient(135deg, #22c55e, #16a34a);
+  border-radius: 20px;
+  text-decoration: none;
+  transition: 0.2s;
+}
+
+.recommendation-start:hover {
+  background: linear-gradient(135deg, #16a34a, #15803d);
+}

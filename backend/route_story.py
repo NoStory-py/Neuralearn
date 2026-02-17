@@ -52,7 +52,7 @@ def _pollinations_chat(prompt: str, max_tokens: int = 900, temperature: float = 
         headers["Authorization"] = f"Bearer {POLLINATIONS_TOKEN}"
 
     payload = {
-    "model": "mistral",  # best free model
+    "model": "gemini-2.5-flash-lite",  # best free model
     "messages": [
         {"role": "user", "content": prompt}
     ],

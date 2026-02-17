@@ -39,13 +39,54 @@ def create_access_token(data: dict, expires_delta: timedelta):
 
 # Get current user from JWT token
 async def get_current_user(token: str = Depends(oauth2_scheme)):
+
     try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+
+        payload = jwt.decode(
+            token,
+            SECRET_KEY,
+            algorithms=["HS256"]   # force correct algorithm
+        )
+
         user_id = payload.get("id")
-        user = await users_collection.find_one({"_id": ObjectId(user_id)})
-        print(user)
+
+        if not user_id:
+            raise HTTPException(
+                status_code=401,
+                detail="Invalid token payload"
+            )
+
+        user = await users_collection.find_one({
+            "_id": ObjectId(user_id)
+        })
+
         if not user:
-            raise HTTPException(status_code=401, detail="User not found")
+            raise HTTPException(
+                status_code=401,
+                detail="User not found"
+            )
+
         return user
+
+    except jwt.ExpiredSignatureError:
+
+        raise HTTPException(
+            status_code=401,
+            detail="Token expired"
+        )
+
+    except jwt.InvalidTokenError:
+
+        raise HTTPException(
+            status_code=401,
+            detail="Invalid token"
+        )
+
     except Exception as e:
-        print(e)
+
+        print("JWT Error:", e)
+
+        raise HTTPException(
+            status_code=401,
+            detail="Authentication failed"
+        )

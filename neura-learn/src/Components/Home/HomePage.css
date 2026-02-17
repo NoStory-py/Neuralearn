@@ -1,0 +1,5 @@
+.homepage-container {
+  background: linear-gradient(180deg, #f0f9ff 0%, #e0f2fe 100%);
+  min-height: 100vh;
+  padding-bottom: 40px;
+}
