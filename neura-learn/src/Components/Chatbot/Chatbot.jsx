@@ -146,11 +146,22 @@ export default function Chatbot() {
   try {
 
     const systemPrompt = `
-You are NeuraBot, a friendly educational assistant.
+You are NeuraBot, a friendly educational assistant for children with autism and their caregivers.
 
-Explain clearly and simply.
-Be supportive.
-Help autism learners.
+Always assume any child, student, or learner mentioned is autistic unless the user clearly says otherwise.
+
+Give autism-friendly guidance using:
+
+simple language
+
+step-by-step explanations
+
+structured and predictable methods
+
+sensory-aware and supportive teaching strategies
+
+Be calm, patient, encouraging, and never give generic parenting advice.
+Your goal is to make learning safe, clear, and comfortable for autistic children.
 `;
 
     const pollinationMessages = [
@@ -279,205 +290,191 @@ Help autism learners.
   // UI
   // =====================
   return (
+  <div className="chatbot-page">
 
-    <div className="chatbot-page">
+    <div className="chatbot-container">
 
-      <div className="chatbot-container">
+      {/* ===== Top Card ===== */}
+      <div className="chatbot-card">
+        <div className="chatbot-header">
 
-        <div className="chatbot-card">
+          <div className="chatbot-left">
+            <h1 className="chatbot-title">NeuraBot</h1>
 
-          <div className="chatbot-header">
+            <p className="chatbot-subtitle">
+              Your friendly learning buddy, ask anything ✨
+            </p>
 
-            <div className="chatbot-left">
-
-              <h1 className="chatbot-title">
-                NeuraBot
-              </h1>
-
-              <p className="chatbot-subtitle">
-                Your friendly learning buddy ✨
-              </p>
-
+            {/* Pills */}
+            <div className="chatbot-pill-grid">
+              <Pill emoji="📚" label="General knowledge" accent="chatbot-accent-yellow" />
+              <Pill emoji="🧠" label="Application questions" accent="chatbot-accent-sky" />
+              <Pill emoji="🤝" label="Virtual Therapist" accent="chatbot-accent-rose" />
+              <Pill emoji="💡" label="Problem solving" accent="chatbot-accent-lime" />
             </div>
+          </div>
 
+          <div className="chatbot-right">
+            <div className="chatbot-bot-card">
+              <div className="chatbot-bot-avatar">NL</div>
+              <p className="chatbot-bot-name">NeuraBot</p>
+              <div className="chatbot-bot-desc">
+                Made for learning, playful & safe
+              </div>
+            </div>
           </div>
 
         </div>
+      </div>
 
-        <div
-          ref={chatRef}
-          className="chatbot-chat-section"
-        >
+      {/* ===== Chat Section ===== */}
+      <div ref={chatRef} className="chatbot-chat-section">
 
-          {/* Controls */}
+        {/* ===== TTS Controls ===== */}
+        <div className="chatbot-tts-controls">
 
-          <div className="chatbot-tts-controls">
+          <button
+            className={`btn btn--sm ${autoSpeak ? "btn--primary" : "btn--outline"}`}
+            onClick={() => setAutoSpeak(!autoSpeak)}
+          >
+            {autoSpeak ? "🔊 Auto-speak ON" : "🔇 Auto-speak OFF"}
+          </button>
 
-            <button
-              className="btn btn--sm"
-              onClick={() =>
-                setAutoSpeak(
-                  !autoSpeak
-                )
-              }
-            >
-              {autoSpeak
-                ? "🔊 Auto ON"
-                : "🔇 Auto OFF"}
-            </button>
-
+          {voices.length > 0 && (
             <select
-              value={
-                selectedVoice?.name || ""
-              }
+              className="chatbot-voice-select"
+              value={selectedVoice?.name || ""}
               onChange={(e) => {
-
-                const voice =
-                  voices.find(
-                    v =>
-                      v.name ===
-                      e.target.value
-                  );
-
-                setSelectedVoice(
-                  voice
-                );
-
+                const voice = voices.find(v => v.name === e.target.value);
+                setSelectedVoice(voice);
               }}
             >
-
-              {voices.map(voice => (
-
-                <option
-                  key={voice.name}
-                  value={voice.name}
-                >
-                  {voice.name}
+              {voices.map(v => (
+                <option key={v.name} value={v.name}>
+                  {v.name.split(" - ")[0]}
                 </option>
-
               ))}
-
             </select>
+          )}
 
+          <div className="chatbot-speed-control">
+            <label>Speed: {speechRate.toFixed(2)}x</label>
             <input
               type="range"
               min="0.5"
               max="1.5"
               step="0.05"
               value={speechRate}
-              onChange={(e) =>
-                setSpeechRate(
-                  parseFloat(
-                    e.target.value
-                  )
-                )
-              }
+              onChange={(e) => setSpeechRate(parseFloat(e.target.value))}
+              className="chatbot-speed-slider"
             />
-
-            {isSpeaking && (
-
-              <button
-                className="btn btn--sm btn--secondary"
-                onClick={
-                  stopSpeaking
-                }
-              >
-                ⏹ Stop
-              </button>
-
-            )}
-
           </div>
 
-          {/* Messages */}
-
-          <div className="chatbot-chat-messages">
-
-            {messages.map(
-              (m, i) => (
-
-                <div
-                  key={i}
-                  className={`chatbot-message-row ${
-                    m.role === "user"
-                      ? "user"
-                      : "assistant"
-                  }`}
-                >
-
-                  <div className="chatbot-message-bubble">
-
-                    {m.text}
-
-                    {m.role ===
-                      "assistant" && (
-
-                      <button
-                        className="chatbot-speak-btn"
-                        onClick={() =>
-                          speakText(
-                            m.text
-                          )
-                        }
-                      >
-                        🔊
-                      </button>
-
-                    )}
-
-                  </div>
-
-                </div>
-
-              )
-            )}
-
-            {isLoading &&
-              <div>
-                Thinking...
-              </div>
-            }
-
-          </div>
-
-          {/* Input */}
-
-          <div className="chatbot-chat-input">
-
-            <input
-              value={q}
-              onChange={(e) =>
-                setQ(
-                  e.target.value
-                )
-              }
-              onKeyDown={(e) =>
-                e.key === "Enter"
-                  ? send()
-                  : null
-              }
-              placeholder="Ask anything..."
-            />
-
+          {isSpeaking && (
             <button
-              onClick={send}
-              disabled={isLoading}
+              className="btn btn--sm btn--secondary"
+              onClick={stopSpeaking}
             >
-              Send
+              ⏹ Stop
             </button>
-
-          </div>
-
-          <p>
-            🚀 Connected to Pollinations AI
-          </p>
+          )}
 
         </div>
 
+        {/* ===== Messages ===== */}
+        <div className="chatbot-chat-messages">
+
+          {messages.map((m, i) => {
+            const isUser = m.role === "user";
+
+            return (
+              <div
+                key={i}
+                className={`chatbot-message-row ${isUser ? "user" : "assistant"}`}
+              >
+                <div
+                  className={`chatbot-message-bubble ${
+                    isUser ? "user-bubble" : "assistant-bubble"
+                  }`}
+                >
+                  <div className="chatbot-message-text">
+                    {m.text}
+                  </div>
+
+                  <div className="chatbot-message-actions">
+                    <div
+                      className={`chatbot-message-meta ${
+                        isUser ? "user-meta" : "assistant-meta"
+                      }`}
+                    >
+                      {isUser ? "You" : "NeuraBot"}
+                    </div>
+
+                    {!isUser && (
+                      <button
+                        className="chatbot-speak-btn"
+                        onClick={() => speakText(m.text)}
+                        title="Read aloud"
+                      >
+                        🔊
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+
+          {isLoading && (
+            <div className="chatbot-message-row assistant">
+              <div className="chatbot-message-bubble assistant-bubble">
+                <div className="chatbot-message-text">
+                  <em>Thinking... 💭</em>
+                </div>
+              </div>
+            </div>
+          )}
+
+        </div>
+
+        {/* ===== Input ===== */}
+        <div className="chatbot-chat-input">
+
+          <input
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !isLoading) send();
+            }}
+            placeholder="Type your question..."
+            className="chatbot-input"
+            disabled={isLoading}
+          />
+
+          <button
+            onClick={send}
+            className="chatbot-send-btn"
+            disabled={isLoading}
+          >
+            {isLoading ? "..." : "Send"}
+          </button>
+
+        </div>
+
+        <p className="chatbot-tip">
+          🚀 Connected to Pollinations AI
+        </p>
+
+      </div>
+
+      <div className="chatbot-footer">
+        Try resizing the window for responsive vibes ✨
       </div>
 
     </div>
 
-  );
+  </div>
+);
+
 
 }

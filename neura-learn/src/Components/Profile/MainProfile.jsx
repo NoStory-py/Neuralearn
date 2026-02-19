@@ -160,9 +160,9 @@ const MainProfile = () => {
           <ResponsiveContainer width="100%" height={300}>
             <BarChart data={performanceData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
               <CartesianGrid strokeDasharray="4 4" />
-              <XAxis dataKey="subject" />
-              <YAxis yAxisId="left" domain={[0, 5]} />
-              <YAxis yAxisId="right" orientation="right" domain={[0, 100]} />
+              <XAxis dataKey="subject" tick={{ fontSize: 'clamp(0.7rem, 1.5vw, 1rem)' }} interval={0} angle={-45} textAnchor="end" height={80}/>
+              <YAxis yAxisId="left" domain={[0, 5]} tick={{ fontSize: 'clamp(0.7rem, 1.5vw, 1rem)' }} />
+              <YAxis yAxisId="right" orientation="right" domain={[0, 100]} tick={{ fontSize: 'clamp(0.7rem, 1.5vw, 1rem)' }} />
               <Tooltip />
               <Legend />
               <Bar yAxisId="left" dataKey="average" fill="#4caf50" name="Average Marks" />
@@ -186,8 +186,9 @@ const MainProfile = () => {
                     const monthName = new Date(date).toLocaleString('default', { month: 'short' }); // "Feb"
                     return `${monthName} ${parseInt(day, 10)}`; // "Feb 15"
                   }}
+                  tick={{ fontSize: 'clamp(0.7rem, 1.5vw, 1rem)' }}
                 />
-                <YAxis domain={[0, 5]} />
+                <YAxis domain={[0, 5]}  tick={{ fontSize: 'clamp(0.7rem, 1.5vw, 1rem)' }} />
                 <Tooltip />
                 <Legend />
                 
